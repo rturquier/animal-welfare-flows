@@ -1,3 +1,14 @@
+# --- Project-specific files ---
+# Data
+data/
+
+
+# --- MacOS ---
+.DS_Store
+**/.DS_Store
+
+
+# --- R and Rstudio files (GitHub defaults) ---
 # History files
 .Rhistory
 .Rapp.history
