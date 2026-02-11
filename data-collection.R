@@ -16,3 +16,6 @@ if (!raw_data_is_downloaded) {
   download_production_data()
   download_trade_data()
 }
+
+raw_production_df <- read_rds("data/raw/production.rds")
+raw_trade_df <- read_rds("data/raw/trade.rds")
