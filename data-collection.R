@@ -19,3 +19,19 @@ if (!raw_data_is_downloaded) {
 
 raw_production_df <- read_rds("data/raw/production.rds")
 raw_trade_df <- read_rds("data/raw/trade.rds")
+
+scope <- list(
+  'countries' = c("France", "Germany"),
+  'years' = 2007:2008,
+  'items' = c("Meat of chickens, fresh or chilled")
+)
+
+production_df <- raw_production_df |>
+  filter(
+    area %in% scope$countries,
+    year %in% scope$years,
+    item %in% scope$items
+  ) |>
+  select(area, year, item, element, value, unit) |>
+  arrange(area, year)
+
