@@ -21,16 +21,35 @@ raw_trade_df <- read_rds("data/raw/trade.rds")
 
 scope <- list(
   'countries' = c("France", "Germany"),
-  'years' = 2007:2008,
-  'items' = c("Meat of chickens, fresh or chilled")
+  'years' = 2007,
+  'items' = c(
+    "Chickens",
+    "Meat of chickens, fresh or chilled",
+    "Meat of chickens, frozen",
+    "Hen eggs in shell, fresh",
+  ),
+  'elements' = c(
+    "producing_animals_slaughtered", "stocks", "laying", "production"
+  )
 )
 
 production_df <- raw_production_df |>
   filter(
     area %in% scope$countries,
     year %in% scope$years,
-    item %in% scope$items
+    item %in% scope$items,
+    element %in% scope$elements
   ) |>
-  select(area, year, item, element, value, unit) |>
+  mutate(
+    conversion_factor = case_match(unit,
+                                   "1000 An" ~ 1000,
+                                   "1000 No" ~ 1000,
+                                   .default = 1),
+    value = value * conversion_factor,
+    unit = case_match(unit,
+                      "1000 An" ~ "animals",
+                      "1000 No" ~ "number",
+                      .default = unit)
+  ) |>
+  select(area, year, item, element, value, unit, flag, note) |>
   arrange(area, year)
-
