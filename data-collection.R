@@ -9,10 +9,9 @@ download_trade_data <- function() {
   get_faostat_bulk("TM") |> saveRDS("data/raw/trade.rds")
 }
 
-
 raw_data_is_downloaded <- file.exists("data/raw/production.rds",
                                       "data/raw/trade.rds")
-if (!raw_data_is_downloaded) {
+if (!all(raw_data_is_downloaded)) {
   download_production_data()
   download_trade_data()
 }
