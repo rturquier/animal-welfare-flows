@@ -26,7 +26,7 @@ scope <- list(
     "Chickens",
     "Meat of chickens, fresh or chilled",
     "Meat of chickens, frozen",
-    "Hen eggs in shell, fresh",
+    "Hen eggs in shell, fresh"
   ),
   'elements' = c(
     "producing_animals_slaughtered", "stocks", "laying", "production"
