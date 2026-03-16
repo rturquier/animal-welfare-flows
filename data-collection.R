@@ -1,7 +1,8 @@
+# Libraries ---------------------------------------------------------------
 library("tidyverse")
 library("FAOSTAT")
 
-
+# Download FAO data -------------------------------------------------------
 download_production_data <- function() {
   get_faostat_bulk("QCL") |> saveRDS("data/raw/production.rds")
 }
@@ -16,9 +17,13 @@ if (!all(raw_data_is_downloaded)) {
   download_trade_data()
 }
 
+# Read downloaded data ----------------------------------------------------
 raw_production_df <- read_rds("data/raw/production.rds")
 raw_trade_df <- read_rds("data/raw/trade.rds")
 
+
+# Scope -------------------------------------------------------------------
+# For now, restrict scope to chickens in France and Germany, in 2007
 scope <- list(
   'countries' = c("France", "Germany"),
   'years' = 2007,
@@ -33,6 +38,7 @@ scope <- list(
   )
 )
 
+# Wrangle production data -------------------------------------------------
 production_df <- raw_production_df |>
   filter(
     area %in% scope$countries,
