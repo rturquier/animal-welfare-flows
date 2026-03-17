@@ -2,6 +2,7 @@
 library("tidyverse")
 library("FAOSTAT")
 library("readxl")
+library("countrycode")
 
 # Download FAO data -------------------------------------------------------
 download_production_data <- function() {
@@ -62,7 +63,18 @@ production_df <- raw_production_df |>
   arrange(area, year)
 
 # Prepare EU laying hens housing system data ------------------------------
-egg_dashboard_data <- read_csv("data/EU_eggs_dashboards.csv")
+egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>
+  mutate(country = countrycode(country, "eurostat", "country.name.en")) |>
+  mutate(across(starts_with("percentage"),
+                ~ . / 100,
+                .names = "{str_replace(.col, 'percentage', 'share')}"),
+        .keep = "unused") |>
+  mutate(across(
+    matches("share_(enriched|barn|free_range|organic)"),
+    ~ round(. * n_laying_hens),
+    .names = "{str_replace(.col, 'share', 'n')}"
+  ))
+
 
 hen_housing_2011_2021_numbers <- read_excel(
   "data/raw/laying-hens-keeping-2011-2020_en.xlsx",
@@ -75,7 +87,7 @@ hen_housing_2011_2021_numbers <- read_excel(
     "n_free_range",
     "n_barn",
     "n_organic",
-    "total"
+    "n_laying_hens"
   )
 )
 hen_housing_2011_2021_shares <- read_excel(
@@ -89,3 +101,10 @@ hen_housing_2011_2021_shares <- read_excel(
     "share_organic"
   )
 )
+
+hen_housing_df <- hen_housing_2011_2021_numbers |>
+  bind_cols(hen_housing_2011_2021_shares) |>
+  fill(country) |>
+  mutate(country = countryname(country)) |>
+  bind_rows(egg_dashboard_df) |>
+  arrange(country, year)
