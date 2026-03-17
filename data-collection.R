@@ -108,3 +108,19 @@ hen_housing_df <- hen_housing_2011_2021_numbers |>
   mutate(country = countryname(country)) |>
   bind_rows(egg_dashboard_df) |>
   arrange(country, year)
+
+
+# Swap barn and free range for Belgium 2014 to correct a likely mistake ----
+be_2014_row <- which(hen_housing_df$country == "Belgium"
+                     & hen_housing_df$year == 2014)
+
+be_2014_n_free_range <- hen_housing_df[[be_2014_row, "n_free_range"]]
+be_2014_share_free_range <- hen_housing_df[[be_2014_row, "share_free_range"]]
+be_2014_n_barn <- hen_housing_df[[be_2014_row, "n_barn"]]
+be_2014_share_barn <- hen_housing_df[[be_2014_row, "share_barn"]]
+
+hen_housing_df[[be_2014_row, "n_free_range"]] <- be_2014_n_barn
+hen_housing_df[[be_2014_row, "n_barn"]] <- be_2014_n_free_range
+
+hen_housing_df[[be_2014_row, "share_free_range"]] <- be_2014_share_barn
+hen_housing_df[[be_2014_row, "share_barn"]] <- be_2014_share_free_range
