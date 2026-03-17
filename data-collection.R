@@ -1,6 +1,7 @@
 # Libraries ---------------------------------------------------------------
 library("tidyverse")
 library("FAOSTAT")
+library("readxl")
 
 # Download FAO data -------------------------------------------------------
 download_production_data <- function() {
@@ -59,3 +60,32 @@ production_df <- raw_production_df |>
   ) |>
   select(area, year, item, element, value, unit, flag, note) |>
   arrange(area, year)
+
+# Prepare EU laying hens housing system data ------------------------------
+egg_dashboard_data <- read_csv("data/EU_eggs_dashboards.csv")
+
+hen_housing_2011_2021_numbers <- read_excel(
+  "data/raw/laying-hens-keeping-2011-2020_en.xlsx",
+  range = "A4:H300",
+  col_names = c(
+    "country",
+    "year",
+    "n_battery",
+    "n_enriched",
+    "n_free_range",
+    "n_barn",
+    "n_organic",
+    "total"
+  )
+)
+hen_housing_2011_2021_shares <- read_excel(
+  "data/raw/laying-hens-keeping-2011-2020_en.xlsx",
+  range = "L4:P300",
+  col_names = c(
+    "share_battery",
+    "share_enriched",
+    "share_free_range",
+    "share_barn",
+    "share_organic"
+  )
+)
