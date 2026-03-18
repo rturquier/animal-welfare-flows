@@ -112,18 +112,14 @@ hen_housing_df <- hen_housing_2011_2021_numbers |>
   relocate(n_free_range, .after = n_barn) |>
   relocate(share_free_range, .after = share_barn)
 
-
-# Swap barn and free range for Belgium 2014 to correct a likely mistake ----
+# Replace Belgium and Poland 2014 with NAs ----
+# For Belgium and Poland, 2014 is nearly identical to 2013, but with `barn` and
+# `free_range` swapped. This is probably the result of a human mistake.
 be_2014_row <- which(hen_housing_df$country == "Belgium"
                      & hen_housing_df$year == 2014)
+pl_2014_row <- which(hen_housing_df$country == "Poland"
+                     & hen_housing_df$year == 2014)
+all_columns_except_country_and_year <- hen_housing_df |> colnames() |> tail(-2)
+hen_housing_df[be_2014_row, all_columns_except_country_and_year] <- NA
+hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
 
-be_2014_n_free_range <- hen_housing_df[[be_2014_row, "n_free_range"]]
-be_2014_share_free_range <- hen_housing_df[[be_2014_row, "share_free_range"]]
-be_2014_n_barn <- hen_housing_df[[be_2014_row, "n_barn"]]
-be_2014_share_barn <- hen_housing_df[[be_2014_row, "share_barn"]]
-
-hen_housing_df[[be_2014_row, "n_free_range"]] <- be_2014_n_barn
-hen_housing_df[[be_2014_row, "n_barn"]] <- be_2014_n_free_range
-
-hen_housing_df[[be_2014_row, "share_free_range"]] <- be_2014_share_barn
-hen_housing_df[[be_2014_row, "share_barn"]] <- be_2014_share_free_range
