@@ -107,7 +107,9 @@ hen_housing_df <- hen_housing_2011_2021_numbers |>
   fill(country) |>
   mutate(country = countryname(country)) |>
   bind_rows(egg_dashboard_df) |>
-  arrange(country, year)
+  arrange(country, year) |>
+  relocate(n_free_range, .after = n_barn) |>
+  relocate(share_free_range, .after = share_barn)
 
 
 # Swap barn and free range for Belgium 2014 to correct a likely mistake ----
