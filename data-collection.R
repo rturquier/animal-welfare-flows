@@ -123,3 +123,38 @@ all_columns_except_country_and_year <- hen_housing_df |> colnames() |> tail(-2)
 hen_housing_df[be_2014_row, all_columns_except_country_and_year] <- NA
 hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
 
+# Plot shares in a given country ----------------------------------------------
+hen_housing_df |>
+  pivot_longer(
+    matches("share_(battery|enriched|barn|free_range|organic)"),
+    names_to = "housing_system",
+    names_prefix = "share_",
+    names_transform = as_factor,
+    values_to = "system_share"
+  ) |>
+  select(country, year, housing_system, system_share) |>
+  mutate(system_share = na_if(system_share, 0)) |>
+  filter(country == "France") |>
+  ggplot(aes(x = year, y = system_share, fill = fct_rev(housing_system))) +
+  labs(fill = "Housing system") +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "battery" = "#AEAEAE",
+      "enriched" = "#EE6666",
+      "barn" = "#EE9922",
+      "free_range" = "#1999DE",
+      "organic" = "#55CC66"
+    )
+  ) +
+  geom_text(aes(label = scales::percent(system_share, accuracy = 1)),
+            position = position_stack(vjust = 0.5),
+            size = 3) +
+  labs(
+    title = "Hen housing systems in France",
+    x = "Year",
+    y = "Share of laying hens",
+    fill = "Housing system"
+  ) +
+  theme_minimal()
