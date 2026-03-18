@@ -107,6 +107,7 @@ hen_housing_df <- hen_housing_2011_2021_numbers |>
   fill(country) |>
   mutate(country = countryname(country)) |>
   bind_rows(egg_dashboard_df) |>
+  distinct(country, year, .keep_all = TRUE) |>
   arrange(country, year) |>
   relocate(n_free_range, .after = n_barn) |>
   relocate(share_free_range, .after = share_barn)
