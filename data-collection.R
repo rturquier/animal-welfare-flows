@@ -139,14 +139,8 @@ hen_housing_df |>
   labs(fill = "Housing system") +
   geom_col() +
   scale_y_continuous(labels = scales::percent) +
-  scale_fill_manual(
-    values = c(
-      "battery" = "#AEAEAE",
-      "enriched" = "#EE6666",
-      "barn" = "#EE9922",
-      "free_range" = "#1999DE",
-      "organic" = "#55CC66"
-    )
+  scale_fill_discrete(
+    palette = c("#81CF72", "#FFCC22", "#EE9922", "#EE6666", "#B05555")
   ) +
   geom_text(aes(label = scales::percent(system_share, accuracy = 1)),
             position = position_stack(vjust = 0.5),
