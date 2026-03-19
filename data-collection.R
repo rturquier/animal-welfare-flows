@@ -110,7 +110,8 @@ hen_housing_df <- hen_housing_2011_2021_numbers |>
   distinct(country, year, .keep_all = TRUE) |>
   arrange(country, year) |>
   relocate(n_free_range, .after = n_barn) |>
-  relocate(share_free_range, .after = share_barn)
+  relocate(share_free_range, .after = share_barn) |>
+  mutate(across(matches("year|n_.+"), as.integer))
 
 # Replace Belgium and Poland 2014 with NAs ----
 # For Belgium and Poland, 2014 is nearly identical to 2013, but with `barn` and
