@@ -125,6 +125,10 @@ hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
 
 # Plot shares in a given country ----------------------------------------------
 hen_housing_df |>
+  filter(country == "Luxembourg") |>
+  mutate(across(matches("battery|enriched|barn|free_range|organic"),
+                ~na_if(., 0))) |>
+  select(where(~!all(is.na(.)))) |>
   pivot_longer(
     matches("share_(battery|enriched|barn|free_range|organic)"),
     names_to = "housing_system",
@@ -133,8 +137,6 @@ hen_housing_df |>
     values_to = "system_share"
   ) |>
   select(country, year, housing_system, system_share) |>
-  mutate(system_share = na_if(system_share, 0)) |>
-  filter(country == "France") |>
   ggplot(aes(x = year, y = system_share, fill = fct_rev(housing_system))) +
   labs(fill = "Housing system") +
   geom_col() +
@@ -146,7 +148,7 @@ hen_housing_df |>
             position = position_stack(vjust = 0.5),
             size = 3) +
   labs(
-    title = "Hen housing systems in France",
+    title = "Hen housing systems in Luxembourg",
     x = "Year",
     y = "Share of laying hens",
     fill = "Housing system"
