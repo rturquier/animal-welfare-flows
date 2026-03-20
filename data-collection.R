@@ -1,5 +1,6 @@
 # Libraries ---------------------------------------------------------------
 library("tidyverse")
+library("glue")
 library("FAOSTAT")
 library("readxl")
 library("countrycode")
@@ -125,33 +126,40 @@ hen_housing_df[be_2014_row, all_columns_except_country_and_year] <- NA
 hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
 
 # Plot shares in a given country ----------------------------------------------
-hen_housing_df |>
-  filter(country == "Luxembourg") |>
-  mutate(across(matches("battery|enriched|barn|free_range|organic"),
-                ~na_if(., 0))) |>
-  select(where(~!all(is.na(.)))) |>
-  pivot_longer(
-    matches("share_(battery|enriched|barn|free_range|organic)"),
-    names_to = "housing_system",
-    names_prefix = "share_",
-    names_transform = as_factor,
-    values_to = "system_share"
-  ) |>
-  select(country, year, housing_system, system_share) |>
-  ggplot(aes(x = year, y = system_share, fill = fct_rev(housing_system))) +
-  labs(fill = "Housing system") +
-  geom_col() +
-  scale_y_continuous(labels = scales::percent) +
-  scale_fill_discrete(
-    palette = c("#81CF72", "#FFCC22", "#EE9922", "#EE6666", "#B05555")
-  ) +
-  geom_text(aes(label = scales::percent(system_share, accuracy = 1)),
-            position = position_stack(vjust = 0.5),
-            size = 3) +
-  labs(
-    title = "Hen housing systems in Luxembourg",
-    x = "Year",
-    y = "Share of laying hens",
-    fill = "Housing system"
-  ) +
-  theme_minimal()
+plot_housing_shares <- function(hen_housing_df, country_name){
+  housing_shares_plot_df <- hen_housing_df |>
+    filter(country == country_name) |>
+    mutate(across(matches("battery|enriched|barn|free_range|organic"),
+                  ~na_if(., 0))) |>
+    select(where(~!all(is.na(.)))) |>
+    pivot_longer(
+      matches("share_(battery|enriched|barn|free_range|organic)"),
+      names_to = "housing_system",
+      names_prefix = "share_",
+      names_transform = as_factor,
+      values_to = "system_share"
+    ) |>
+    select(country, year, housing_system, system_share)
+
+  housing_shares_plot <- housing_shares_plot_df |>
+    ggplot(aes(x = year, y = system_share, fill = fct_rev(housing_system))) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_discrete(
+      palette = c("#81CF72", "#FFCC22", "#EE9922", "#EE6666", "#B05555")
+    ) +
+    geom_text(aes(label = scales::percent(system_share, accuracy = 1)),
+              position = position_stack(vjust = 0.5),
+              size = 3) +
+    labs(
+      title = "Hen housing systems in {country_name}" |> glue(),
+      x = "Year",
+      y = "Share of laying hens",
+      fill = "Housing system"
+    ) +
+    theme_minimal()
+
+  return(housing_shares_plot)
+}
+
+hen_housing_df |> plot_housing_shares("Belgium")
