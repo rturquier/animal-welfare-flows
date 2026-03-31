@@ -4,6 +4,7 @@ library("glue")
 library("FAOSTAT")
 library("readxl")
 library("countrycode")
+library("pdftools")
 
 # Download FAO data -------------------------------------------------------
 download_production_data <- function() {
@@ -163,3 +164,51 @@ plot_housing_shares <- function(hen_housing_df, country_name){
 }
 
 hen_housing_df |> plot_housing_shares("Belgium")
+
+# Extract cage data from CIWF 2020 report ----------------------------------
+extract_ciwf_cage_data <- function() {
+  # PDF must be downloaded manually from the URL below and saved in `data/raw`.
+  pdf_url <- "https://www.ciwf.org/media/7442226/ciwf_cage-age_report_oct-20_english_final.pdf"
+  pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
+  if (!file.exists(pdf_path)) {
+   stop(glue("PDF not found at {pdf_path}. Download manually from: {pdf_url}"))
+  }
+
+  data_row_pattern <- r"(.+?\d+.*)"
+  row_has_data <- function(x) str_detect(x, data_row_pattern)
+
+  thousands_separator <- ","
+  percentage <- r"{\(\d.*?%\)}"
+  inputation_flag <- r"{\*}"
+  delete_pattern <- glue("{thousands_separator}|{percentage}|{inputation_flag}")
+
+  column_names <- c(
+    "country",
+    "n_hens",
+    "n_hens_caged",
+    "n_rabbits",
+    "n_rabbits_caged",
+    "n_sows",
+    "n_sows_gestation_crate",
+    "n_sows_farrowing_crate",
+    "n_caged_total"
+  )
+
+  pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
+  pdf_content <- pdf_text(pdf_path)
+  page_15_content <- pdf_content[15]
+  ciwf_table_rows <- str_split(page_15_content, "\n")[[1]]
+
+  ciwf_cage_df <- ciwf_table_rows |>
+    keep(row_has_data) |>
+    str_remove_all(delete_pattern) |>
+    str_replace_all(r"(\s{2,})", ",") |>
+    paste(collapse = "\n") |>
+    read_csv(col_names = column_names) |>
+    filter(country != "EU 27") |>
+    mutate(country = countrycode(country, "country.name", "country.name.en"))
+
+  return(ciwf_cage_df)
+}
+
+ciwf_cage_df <- extract_ciwf_cage_data()
