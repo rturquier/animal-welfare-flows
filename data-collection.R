@@ -32,7 +32,9 @@ scope <- list(
     "Chickens",
     "Meat of chickens, fresh or chilled",
     "Meat of chickens, frozen",
-    "Hen eggs in shell, fresh"
+    "Hen eggs in shell, fresh",
+    "Meat of pig with the bone, fresh or chilled",
+    "Swine / pigs"
   ),
   'elements' = c(
     "producing_animals_slaughtered", "stocks", "laying", "production"
@@ -53,6 +55,8 @@ convert_FAO_units <- function(FAO_df){
                         "1000 An" ~ "animals",
                         "1000 No" ~ "number",
                         "t" ~ "kg",
+                        "An" ~ "animals",
+                        "No" ~ "number",
                         .default = unit)
     )
   return(converted_FAO_df)
@@ -65,11 +69,11 @@ production_df <- raw_production_df |>
   ) |>
   convert_FAO_units() |>
   mutate(
-    animal = case_match(
-      item,
-      "Chickens" ~ "broilers",
-      "Meat of chickens, fresh or chilled" ~ "broilers",
-      "Hen eggs in shell, fresh" ~ "hens"
+    animal = case_when(
+      item |> str_detect("C|chickens") ~ "broilers",
+      item == "Hen eggs in shell, fresh" ~ "hens",
+      item |> str_detect("pig") ~ "pigs",
+      .default = "other"
     ),
     variable_name = case_when(
       element == "producing_animals_slaughtered" ~ "n_slaughtered",
