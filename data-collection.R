@@ -27,10 +27,7 @@ raw_trade_df <- read_rds("data/raw/trade.rds")
 
 
 # Scope -------------------------------------------------------------------
-# For now, restrict scope to chickens in France and Germany, in 2007
 scope <- list(
-  'countries' = c("France", "Germany"),
-  'years' = 2007,
   'items' = c(
     "Chickens",
     "Meat of chickens, fresh or chilled",
@@ -61,11 +58,8 @@ convert_FAO_units <- function(FAO_df){
   return(converted_FAO_df)
 }
 
-
 production_df <- raw_production_df |>
   filter(
-    area %in% scope$countries,
-    year %in% scope$years,
     item %in% scope$items,
     element %in% scope$elements
   ) |>
