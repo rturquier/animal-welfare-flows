@@ -83,7 +83,11 @@ production_df <- raw_production_df |>
     names_from = variable_name,
     values_from = value
   ) |>
-  arrange(area, year)
+  arrange(area, year) |>
+  mutate(
+    slaughter_rate = n_slaughtered / n_animals,
+    weight_per_animal = production_kg / n_slaughtered
+  )
 
 # Prepare EU laying hens housing system data ------------------------------
 egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>
