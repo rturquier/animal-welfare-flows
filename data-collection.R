@@ -64,7 +64,25 @@ production_df <- raw_production_df |>
     element %in% scope$elements
   ) |>
   convert_FAO_units() |>
-  select(area, year, item, element, value, unit, flag, note) |>
+  mutate(
+    animal = case_match(
+      item,
+      "Chickens" ~ "broilers",
+      "Meat of chickens, fresh or chilled" ~ "broilers",
+      "Hen eggs in shell, fresh" ~ "hens"
+    ),
+    variable_name = case_when(
+      element == "producing_animals_slaughtered" ~ "n_slaughtered",
+      element %in% c("stocks", "laying") ~ "n_animals",
+      item |> str_detect("eggs") & unit == "number" ~ "n_eggs",
+      element == "production" ~ "production_{unit}" |> glue()
+    )
+  ) |>
+  select(area, year, animal, variable_name, value) |>
+  pivot_wider(
+    names_from = variable_name,
+    values_from = value
+  ) |>
   arrange(area, year)
 
 # Prepare EU laying hens housing system data ------------------------------
