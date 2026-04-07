@@ -43,6 +43,25 @@ scope <- list(
 )
 
 # Wrangle production data -------------------------------------------------
+convert_FAO_units <- function(FAO_df){
+  converted_FAO_df <- FAO_df |>
+    mutate(
+      conversion_factor = case_match(unit,
+                                     "1000 An" ~ 1000,
+                                     "1000 No" ~ 1000,
+                                     "t" ~ 1000,
+                                     .default = 1),
+      value = value * conversion_factor,
+      unit = case_match(unit,
+                        "1000 An" ~ "animals",
+                        "1000 No" ~ "number",
+                        "t" ~ "kg",
+                        .default = unit)
+    )
+  return(converted_FAO_df)
+}
+
+
 production_df <- raw_production_df |>
   filter(
     area %in% scope$countries,
@@ -50,17 +69,7 @@ production_df <- raw_production_df |>
     item %in% scope$items,
     element %in% scope$elements
   ) |>
-  mutate(
-    conversion_factor = case_match(unit,
-                                   "1000 An" ~ 1000,
-                                   "1000 No" ~ 1000,
-                                   .default = 1),
-    value = value * conversion_factor,
-    unit = case_match(unit,
-                      "1000 An" ~ "animals",
-                      "1000 No" ~ "number",
-                      .default = unit)
-  ) |>
+  convert_FAO_units() |>
   select(area, year, item, element, value, unit, flag, note) |>
   arrange(area, year)
 
