@@ -93,6 +93,22 @@ production_df <- raw_production_df |>
     weight_per_animal = production_kg / n_slaughtered
   )
 
+# Quick scatter plot of the two proxies ------------------------------------
+animal_to_plot <- "broilers"
+year_to_plot <- 2023
+
+production_df |>
+  filter(animal == animal_to_plot, year == year_to_plot) |>
+  ggplot(aes(x = slaughter_rate, y = weight_per_animal)) +
+    geom_point() +
+    labs(title="{animal_to_plot}, {year_to_plot}" |> glue())
+
+# Look for outliers
+production_df |>
+  filter(slaughter_rate > 10, year > 2020) |>
+  select(area, animal, year, slaughter_rate)
+
+
 # Prepare EU laying hens housing system data ------------------------------
 egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>
   mutate(country = countrycode(country, "eurostat", "country.name.en")) |>
