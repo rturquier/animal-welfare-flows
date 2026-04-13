@@ -6,24 +6,19 @@ library("readxl")
 library("countrycode")
 library("pdftools")
 
-# Download FAO data -------------------------------------------------------
-download_production_data <- function() {
-  get_faostat_bulk("QCL") |> saveRDS("data/raw/production.rds")
-}
-download_trade_data <- function() {
-  get_faostat_bulk("TM") |> saveRDS("data/raw/trade.rds")
-}
+# Functions --------------------------------------------------------------
+source("functions.R")
 
-raw_data_is_downloaded <- file.exists("data/raw/production.rds",
-                                      "data/raw/trade.rds")
-if (!all(raw_data_is_downloaded)) {
-  download_production_data()
-  download_trade_data()
-}
+# Download FAO data -------------------------------------------------------
+production_data_path <- "data/raw/production.rds"
+trade_data_path <- "data/raw/trade.rds"
+
+download_production_data(production_data_path)
+download_trade_data(trade_data_path)
 
 # Read downloaded data ----------------------------------------------------
-raw_production_df <- read_rds("data/raw/production.rds")
-raw_trade_df <- read_rds("data/raw/trade.rds")
+raw_production_df <- read_rds(production_data_path)
+raw_trade_df <- read_rds(trade_data_path)
 
 
 # Scope -------------------------------------------------------------------
@@ -42,26 +37,6 @@ scope <- list(
 )
 
 # Wrangle production data -------------------------------------------------
-convert_FAO_units <- function(FAO_df){
-  converted_FAO_df <- FAO_df |>
-    mutate(
-      conversion_factor = case_match(unit,
-                                     "1000 An" ~ 1000,
-                                     "1000 No" ~ 1000,
-                                     "t" ~ 1000,
-                                     .default = 1),
-      value = value * conversion_factor,
-      unit = case_match(unit,
-                        "1000 An" ~ "animals",
-                        "1000 No" ~ "number",
-                        "t" ~ "kg",
-                        "An" ~ "animals",
-                        "No" ~ "number",
-                        .default = unit)
-    )
-  return(converted_FAO_df)
-}
-
 production_df <- raw_production_df |>
   filter(
     item %in% scope$items,
@@ -172,90 +147,9 @@ hen_housing_df[be_2014_row, all_columns_except_country_and_year] <- NA
 hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
 
 # Plot shares in a given country ----------------------------------------------
-plot_housing_shares <- function(hen_housing_df, country_name){
-  housing_shares_plot_df <- hen_housing_df |>
-    filter(country == country_name) |>
-    mutate(across(matches("battery|enriched|barn|free_range|organic"),
-                  ~na_if(., 0))) |>
-    select(where(~!all(is.na(.)))) |>
-    pivot_longer(
-      matches("share_(battery|enriched|barn|free_range|organic)"),
-      names_to = "housing_system",
-      names_prefix = "share_",
-      names_transform = as_factor,
-      values_to = "system_share"
-    ) |>
-    select(country, year, housing_system, system_share)
-
-  housing_shares_plot <- housing_shares_plot_df |>
-    ggplot(aes(x = year, y = system_share, fill = fct_rev(housing_system))) +
-    geom_col() +
-    scale_y_continuous(labels = scales::percent) +
-    scale_fill_discrete(
-      palette = c("#81CF72", "#FFCC22", "#EE9922", "#EE6666", "#B05555")
-    ) +
-    geom_text(aes(label = scales::percent(system_share, accuracy = 1)),
-              position = position_stack(vjust = 0.5),
-              size = 3) +
-    labs(
-      title = "Hen housing systems in {country_name}" |> glue(),
-      x = "Year",
-      y = "Share of laying hens",
-      fill = "Housing system"
-    ) +
-    theme_minimal()
-
-  return(housing_shares_plot)
-}
-
 hen_housing_df |> plot_housing_shares("Belgium")
 
 # Extract cage data from CIWF 2020 report ----------------------------------
-extract_ciwf_cage_data <- function() {
-  # PDF must be downloaded manually from the URL below and saved in `data/raw`.
-  pdf_url <- "https://www.ciwf.org/media/7442226/ciwf_cage-age_report_oct-20_english_final.pdf"
-  pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
-  if (!file.exists(pdf_path)) {
-   stop(glue("PDF not found at {pdf_path}. Download manually from: {pdf_url}"))
-  }
-
-  data_row_pattern <- r"(.+?\d+.*)"
-  row_has_data <- function(x) str_detect(x, data_row_pattern)
-
-  thousands_separator <- ","
-  percentage <- r"{\(\d.*?%\)}"
-  inputation_flag <- r"{\*}"
-  delete_pattern <- glue("{thousands_separator}|{percentage}|{inputation_flag}")
-
-  column_names <- c(
-    "country",
-    "n_hens",
-    "n_hens_caged",
-    "n_rabbits",
-    "n_rabbits_caged",
-    "n_sows",
-    "n_sows_gestation_crate",
-    "n_sows_farrowing_crate",
-    "n_caged_total"
-  )
-
-  pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
-  pdf_content <- pdf_text(pdf_path)
-  page_15_content <- pdf_content[15]
-  ciwf_table_rows <- str_split(page_15_content, "\n")[[1]]
-
-  ciwf_cage_df <- ciwf_table_rows |>
-    keep(row_has_data) |>
-    str_remove_all(delete_pattern) |>
-    str_replace_all(r"(\s{2,})", ",") |>
-    paste(collapse = "\n") |>
-    read_csv(col_names = column_names) |>
-    filter(country != "EU 27") |>
-    mutate(country = countrycode(country, "country.name", "country.name.en"))
-
-  return(ciwf_cage_df)
-}
-
 ciwf_cage_df <- extract_ciwf_cage_data()
 
 # Eurostat data on pig housing -----------------------------------------------
