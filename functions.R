@@ -4,7 +4,7 @@ download_wrapper <- function(.download){
     if (!file.exists(file_path)){
       .download(file_path)
     } else {
-      file_name <- file_path |> str_extract(r"([^/]+\.[a-zA-Z]{1,5}$)")
+      file_name <- file_path |> str_extract(r"([^/]+?$)")
       folder_path <- file_path |> str_extract(r"(/?(.+/)*)")
       print(glue("✓ `{file_name}` already downloaded in `{folder_path}`."))
     }
