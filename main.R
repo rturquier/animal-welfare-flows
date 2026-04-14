@@ -156,13 +156,8 @@ ciwf_cage_df <- extract_ciwf_cage_data()
 library(eurostat)
 
 pig_housing_data_path <- "data/raw/pig_housing.csv"
-
-if(pig_housing_data_path |> file.exists()){
-  pig_housing_data <- pig_housing_data_path |> read_csv()
-} else {
-  pig_housing_data <- get_eurostat("ef_ah_pigs")
-  pig_housing_data |> write_csv(pig_housing_data_path)
-}
+download_eurostat_pig_data(pig_housing_data_path)
+pig_housing_data <- pig_housing_data_path |> read_csv()
 
 pig_housing_df <- pig_housing_data |>
   label_eurostat(fix_duplicated = T)

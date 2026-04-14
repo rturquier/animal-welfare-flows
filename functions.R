@@ -18,6 +18,10 @@ download_trade_data <- download_wrapper(function(file_path) {
   get_faostat_bulk("TM") |> saveRDS(file_path)
 })
 
+download_eurostat_pig_data <- download_wrapper(function(file_path) {
+  get_eurostat("ef_ah_pigs") |> write_csv(pig_housing_data_path)
+})
+
 please_download_CIWF_report <- download_wrapper(function(pdf_path){
   # PDF must be downloaded manually from the URL below and saved in `data/raw`.
   pdf_url <- "https://www.ciwf.org/media/7442226/ciwf_cage-age_report_oct-20_english_final.pdf"
