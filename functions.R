@@ -38,14 +38,14 @@ download_eurostat_pig_data <- download_wrapper(function(file_path) {
   get_eurostat("ef_ah_pigs") |> write_csv(file_path)
 })
 
-please_download_CIWF_report <- download_wrapper(function(pdf_path){
+please_download_CIWF_report <- function(pdf_path){
   # PDF must be downloaded manually from the URL below and saved in `data/raw`.
   pdf_url <- "https://www.ciwf.org/media/7442226/ciwf_cage-age_report_oct-20_english_final.pdf"
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
   if (!file.exists(pdf_path)) {
     stop(glue("PDF not found at {pdf_path}. Download manually from: {pdf_url}"))
   }
-})
+}
 
 convert_FAO_units <- function(FAO_df){
   converted_FAO_df <- FAO_df |>
