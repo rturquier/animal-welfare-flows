@@ -16,7 +16,22 @@ download_production_data <- download_wrapper(function(file_path) {
 })
 
 download_trade_data <- download_wrapper(function(file_path) {
-  get_faostat_bulk("TM") |> saveRDS(file_path)
+  # Select columns & filter rows for faster speed when reading file from disk
+  get_faostat_bulk("TM")  |>
+    select(
+      reporter_countries,
+      partner_countries,
+      year,
+      element,
+      item,
+      value,
+      unit,
+      flag
+    ) |>
+    filter(
+      element %in% c("import_quantity", "export_quantity")
+    ) |>
+    saveRDS(file_path)
 })
 
 download_eurostat_pig_data <- download_wrapper(function(file_path) {
