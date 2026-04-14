@@ -1,4 +1,5 @@
 download_wrapper <- function(.download){
+  force(.download)  # force evaluation to prevent lazy-eval quirks
   function(file_path) {
     if (!file.exists(file_path)){
       .download(file_path)
@@ -11,7 +12,7 @@ download_wrapper <- function(.download){
 }
 
 download_production_data <- download_wrapper(function(file_path) {
-    get_faostat_bulk("QCL") |> saveRDS(file_path)
+  get_faostat_bulk("QCL") |> saveRDS(file_path)
 })
 
 download_trade_data <- download_wrapper(function(file_path) {
@@ -19,7 +20,7 @@ download_trade_data <- download_wrapper(function(file_path) {
 })
 
 download_eurostat_pig_data <- download_wrapper(function(file_path) {
-  get_eurostat("ef_ah_pigs") |> write_csv(pig_housing_data_path)
+  get_eurostat("ef_ah_pigs") |> write_csv(file_path)
 })
 
 please_download_CIWF_report <- download_wrapper(function(pdf_path){
