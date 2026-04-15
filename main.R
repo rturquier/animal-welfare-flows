@@ -122,6 +122,31 @@ trade_df <- raw_trade_df |>
     animal = unique(animal)
   )
 
+# Quick plot of French egg importations ------------------------------
+library("slider")
+
+france_df <- trade_df |>
+  filter(
+    country == "France",
+    animal == "hens",
+    element == "import_quantity"
+  ) |>
+  ungroup() |>
+  group_by(year, item) |>
+  summarise(value = sum(value), unit = unique(unit)) |>
+  ungroup() |>
+  left_join(filter(production_df, animal == "hens", area == "France"), join_by(year == year)) |>
+  mutate(
+    kg_per_egg = production_kg / n_eggs,
+    kg_per_egg_roll_mean = slide(kg_per_egg, mean, .before = 10) |> as.double(),
+    kg_per_egg_roll_mean = replace_na(last(kg_per_egg_roll_mean, na_rm = T)),
+    kg_per_egg = coalesce(kg_per_egg, kg_per_egg_roll_mean),
+    production_kg = coalesce(production_kg, n_eggs * kg_per_egg),
+    imported_share = value / production_kg
+  )
+
+france_df |> ggplot(aes(x = year, y = imported_share)) + geom_line()
+
 # Prepare EU laying hens housing system data ------------------------------
 egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>
   mutate(country = countrycode(country, "eurostat", "country.name.en")) |>
