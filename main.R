@@ -22,7 +22,6 @@ download_trade_data(trade_data_path)
 raw_production_df <- read_rds(production_data_path)
 raw_trade_df <- read_rds(trade_data_path)
 
-
 # Scope -------------------------------------------------------------------
 scope <- list(
   'items' = c(
@@ -85,6 +84,43 @@ production_df |>
   filter(slaughter_rate > 10, year > 2020) |>
   select(area, animal, year, slaughter_rate)
 
+# Wrangle trade data ------------------------------------------------------
+trade_df <- raw_trade_df |>
+  rename(
+    country = reporter_countries,
+    partner = partner_countries
+  ) |>
+  filter(
+    item |> str_detect(glue(r"([pP]igs?\b)",
+                            "[cC]hicken",
+                            "Poultry meat preparations",
+                            "Hen eggs",
+                            "Eggs, (dried|liquid)",
+                            .sep = "|")),
+    !(item |> str_detect("^Feed"))
+  ) |>
+  mutate(
+    id = row_number(),
+    across(c(country, partner), normalize_trading_country_names),
+    animal = case_when(
+      item |> str_detect("egg") ~ "hens",
+      item |> str_detect("[Cc]hicken|Poultry meat") ~ "broilers",
+      item |> str_detect("[Pp]ig") ~ "pigs",
+      .default = "other"
+    ),
+    value = if_else(item |> str_detect("preparations"), value * 0.2, value)
+    # Beef, pig and poultry meat preparations include prepared meals that
+    # contain more than 20% of meat and offal by weight.
+    # --> conservatively multiply these items by 0.2.
+  ) |>
+  convert_FAO_units() |>
+  filter(country != partner) |>
+  group_by(country, partner, year, element, item, unit) |>
+  summarise(
+    value = sum(value),
+    flag = unique(flag),
+    animal = unique(animal)
+  )
 
 # Prepare EU laying hens housing system data ------------------------------
 egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>

@@ -67,6 +67,25 @@ convert_FAO_units <- function(FAO_df){
   return(converted_FAO_df)
 }
 
+normalize_trading_country_names <- function(country_names) {
+  special_cases <- c(
+    "TÃ¼rkiye" = "Turkey",
+    "RÃ©union" = "France",
+    "French Guiana" = "France",
+    "Canton and Enderbury Islands" = "Kiribati",
+    "Midway Island" = "United States",
+    "Wake Island" = "United States"
+  )
+  normalized_country_names <- countrycode(
+    country_names,
+    origin = "country.name.en",
+    destination = "country.name.en",
+    custom_match = special_cases,
+    nomatch = NULL # keep the original country name if there's no match
+  )
+  return(normalized_country_names)
+}
+
 extract_ciwf_cage_data <- function() {
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
   please_download_CIWF_report(pdf_path)
