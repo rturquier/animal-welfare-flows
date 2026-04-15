@@ -99,9 +99,10 @@ trade_df <- raw_trade_df |>
                             .sep = "|")),
     !(item |> str_detect("^Feed"))
   ) |>
+  convert_FAO_units() |>
+  mutate(across(c(country, partner), normalize_trading_country_names)) |>
+  merge_regions_to_their_country() |>
   mutate(
-    id = row_number(),
-    across(c(country, partner), normalize_trading_country_names),
     animal = case_when(
       item |> str_detect("egg") ~ "hens",
       item |> str_detect("[Cc]hicken|Poultry meat") ~ "broilers",
@@ -112,14 +113,6 @@ trade_df <- raw_trade_df |>
     # Beef, pig and poultry meat preparations include prepared meals that
     # contain more than 20% of meat and offal by weight.
     # --> conservatively multiply these items by 0.2.
-  ) |>
-  convert_FAO_units() |>
-  filter(country != partner) |>
-  group_by(country, partner, year, element, item, unit) |>
-  summarise(
-    value = sum(value),
-    flag = unique(flag),
-    animal = unique(animal)
   )
 
 # Quick plot of French egg importations ------------------------------

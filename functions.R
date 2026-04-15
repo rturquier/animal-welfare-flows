@@ -70,11 +70,7 @@ convert_FAO_units <- function(FAO_df){
 normalize_trading_country_names <- function(country_names) {
   special_cases <- c(
     "TÃ¼rkiye" = "Turkey",
-    "RÃ©union" = "France",
-    "French Guiana" = "France",
-    "Canton and Enderbury Islands" = "Kiribati",
-    "Midway Island" = "United States",
-    "Wake Island" = "United States"
+    "RÃ©union" = "Réunion"
   )
   normalized_country_names <- countrycode(
     country_names,
@@ -84,6 +80,30 @@ normalize_trading_country_names <- function(country_names) {
     nomatch = NULL # keep the original country name if there's no match
   )
   return(normalized_country_names)
+}
+
+merge_regions_to_their_country <- function(trade_df) {
+  country_level_df <- trade_df |>
+    mutate(
+      across(
+        c(country, partner),
+        ~ case_match(
+          .x,
+          "Réunion" ~ "France",
+          "French Guiana" ~ "France",
+          "Canton and Enderbury Islands" ~ "Kiribati",
+          "Midway Island" ~ "United States",
+          "Wake Island" ~ "United States",
+          .default = .x
+        )
+      )
+    ) |>
+    filter(country != partner) |>
+    group_by(country, partner, year, element, item, unit) |>
+    summarise(value = sum(value), flag = unique(flag)) |>
+    ungroup()
+
+  return(country_level_df)
 }
 
 extract_ciwf_cage_data <- function() {
