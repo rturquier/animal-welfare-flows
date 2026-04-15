@@ -13,6 +13,8 @@ source("functions.R")
 production_data_path <- "data/raw/production.rds"
 trade_data_path <- "data/raw/trade.rds"
 
+# Go to https://www.fao.org/faostat/en/#developer-portal to get FAO credentials.
+# You might need to run `faostat_login()` to connect.
 download_production_data(production_data_path)
 download_trade_data(trade_data_path)
 
