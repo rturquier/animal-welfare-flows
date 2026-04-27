@@ -88,9 +88,37 @@ production_df |>
 # Wrangle trade data ------------------------------------------------------
 trade_df <- raw_trade_df |> prepare_trade_df()
 
-aggregated_trade_df <- trade_df |>
+third_party_aggregated_trade_df <- trade_df |>
+  group_by(partner, year, element, animal, unit) |>
+  summarise(quantity = sum(quantity), .groups = "drop") |>
+  pivot_wider(
+    names_from = element,
+    values_from = quantity
+  ) |>
+  rename(
+   country = partner,
+   export_quantity = import_quantity,
+   import_quantity = export_quantity
+  )
+
+self_reported_aggregated_trade_df <- trade_df |>
   group_by(country, year, element, animal, unit) |>
-  summarise(quantity = sum(quantity))
+  summarise(quantity = sum(quantity), .groups = "drop") |>
+  pivot_wider(
+    names_from = element,
+    values_from = quantity
+  )
+
+aggregated_trade_df <-
+  full_join(
+    self_reported_aggregated_trade_df,
+    third_party_aggregated_trade_df,
+    by = c("country", "year", "animal", "unit"),
+    suffix = c("_self_reported", "_third_party")
+  ) |>
+  mutate(import_relative_difference =
+           import_quantity_self_reported / import_quantity_third_party)
+
 
 # Quick plot of French egg importations ------------------------------
 library("slider")
