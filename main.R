@@ -117,7 +117,9 @@ trade_df <- raw_trade_df |>
     # Beef, pig and poultry meat _preparations_ include prepared meals that
     # contain more than 20% of meat and offal by weight.
     # --> conservatively multiply these items by 0.2.
-  )
+  ) |>
+  group_by(country, year, element, animal, unit) |>
+  summarise(quantity = sum(quantity))
 
 # Quick plot of French egg importations ------------------------------
 library("slider")
