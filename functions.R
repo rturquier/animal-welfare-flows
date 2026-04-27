@@ -106,6 +106,43 @@ merge_regions_to_their_country <- function(trade_df) {
   return(country_level_df)
 }
 
+prepare_trade_df <- function(raw_trade_df){
+  trade_df <- raw_trade_df |>
+    rename(
+      country = reporter_countries,
+      partner = partner_countries,
+      quantity = value
+    ) |>
+      filter(
+        item |> str_detect(glue(r"([pP]igs?\b)",
+                                "[cC]hicken",
+                                "Poultry meat preparations",
+                                "Hen eggs",
+                                "Eggs, (dried|liquid)",
+                                .sep = "|")),
+        !(item |> str_detect("^Feed"))
+      ) |>
+      convert_FAO_units() |>
+      mutate(across(c(country, partner), normalize_trading_country_names)) |>
+      merge_regions_to_their_country() |>
+      mutate(
+        animal = case_when(
+          item |> str_detect("egg") ~ "hens",
+          item |> str_detect("[Cc]hicken|Poultry meat") ~ "broilers",
+          item |> str_detect("[Pp]ig") ~ "pigs",
+          .default = "other"
+        ),
+        quantity = if_else(item |> str_detect("preparations"),
+                           quantity * 0.2,
+                           quantity)
+        # Beef, pig and poultry meat _preparations_ include prepared meals that
+        # contain more than 20% of meat and offal by weight.
+        # --> conservatively multiply these items by 0.2.
+      )
+  return(trade_df)
+}
+
+
 extract_ciwf_cage_data <- function() {
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
   please_download_CIWF_report(pdf_path)

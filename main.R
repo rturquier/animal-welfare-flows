@@ -86,38 +86,9 @@ production_df |>
   select(area, animal, year, slaughter_rate)
 
 # Wrangle trade data ------------------------------------------------------
-trade_df <- raw_trade_df |>
-  rename(
-    country = reporter_countries,
-    partner = partner_countries,
-    quantity = value
-  ) |>
-  filter(
-    item |> str_detect(glue(r"([pP]igs?\b)",
-                            "[cC]hicken",
-                            "Poultry meat preparations",
-                            "Hen eggs",
-                            "Eggs, (dried|liquid)",
-                            .sep = "|")),
-    !(item |> str_detect("^Feed"))
-  ) |>
-  convert_FAO_units() |>
-  mutate(across(c(country, partner), normalize_trading_country_names)) |>
-  merge_regions_to_their_country() |>
-  mutate(
-    animal = case_when(
-      item |> str_detect("egg") ~ "hens",
-      item |> str_detect("[Cc]hicken|Poultry meat") ~ "broilers",
-      item |> str_detect("[Pp]ig") ~ "pigs",
-      .default = "other"
-    ),
-    quantity = if_else(item |> str_detect("preparations"),
-                       quantity * 0.2,
-                       quantity)
-    # Beef, pig and poultry meat _preparations_ include prepared meals that
-    # contain more than 20% of meat and offal by weight.
-    # --> conservatively multiply these items by 0.2.
-  ) |>
+trade_df <- raw_trade_df |> prepare_trade_df()
+
+aggregated_trade_df <- trade_df |>
   group_by(country, year, element, animal, unit) |>
   summarise(quantity = sum(quantity))
 
