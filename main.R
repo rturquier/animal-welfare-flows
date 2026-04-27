@@ -39,6 +39,7 @@ scope <- list(
 
 # Wrangle production data -------------------------------------------------
 production_df <- raw_production_df |>
+  rename(quantity = value) |>
   filter(
     item %in% scope$items,
     element %in% scope$elements
@@ -58,10 +59,10 @@ production_df <- raw_production_df |>
       element == "production" ~ "production_{unit}" |> glue()
     )
   ) |>
-  select(area, year, animal, variable_name, value) |>
+  select(area, year, animal, variable_name, quantity) |>
   pivot_wider(
     names_from = variable_name,
-    values_from = value
+    values_from = quantity
   ) |>
   arrange(area, year) |>
   mutate(
@@ -88,7 +89,8 @@ production_df |>
 trade_df <- raw_trade_df |>
   rename(
     country = reporter_countries,
-    partner = partner_countries
+    partner = partner_countries,
+    quantity = value
   ) |>
   filter(
     item |> str_detect(glue(r"([pP]igs?\b)",
@@ -109,8 +111,10 @@ trade_df <- raw_trade_df |>
       item |> str_detect("[Pp]ig") ~ "pigs",
       .default = "other"
     ),
-    value = if_else(item |> str_detect("preparations"), value * 0.2, value)
-    # Beef, pig and poultry meat preparations include prepared meals that
+    quantity = if_else(item |> str_detect("preparations"),
+                       quantity * 0.2,
+                       quantity)
+    # Beef, pig and poultry meat _preparations_ include prepared meals that
     # contain more than 20% of meat and offal by weight.
     # --> conservatively multiply these items by 0.2.
   )
@@ -126,7 +130,7 @@ france_df <- trade_df |>
   ) |>
   ungroup() |>
   group_by(year, item) |>
-  summarise(value = sum(value), unit = unique(unit)) |>
+  summarise(quantity = sum(quantity), unit = unique(unit)) |>
   ungroup() |>
   left_join(filter(production_df, animal == "hens", area == "France"), join_by(year == year)) |>
   mutate(
@@ -135,7 +139,7 @@ france_df <- trade_df |>
     kg_per_egg_roll_mean = replace_na(last(kg_per_egg_roll_mean, na_rm = T)),
     kg_per_egg = coalesce(kg_per_egg, kg_per_egg_roll_mean),
     production_kg = coalesce(production_kg, n_eggs * kg_per_egg),
-    imported_share = value / production_kg
+    imported_share = quantity / production_kg
   )
 
 france_df |> ggplot(aes(x = year, y = imported_share)) + geom_line()

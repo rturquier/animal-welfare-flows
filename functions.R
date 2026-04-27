@@ -55,7 +55,7 @@ convert_FAO_units <- function(FAO_df){
                                      "1000 No" ~ 1000,
                                      "t" ~ 1000,
                                      .default = 1),
-      value = value * conversion_factor,
+      quantity = quantity * conversion_factor,
       unit = case_match(unit,
                         "1000 An" ~ "animals",
                         "1000 No" ~ "number",
@@ -100,7 +100,7 @@ merge_regions_to_their_country <- function(trade_df) {
     ) |>
     filter(country != partner) |>
     group_by(country, partner, year, element, item, unit) |>
-    summarise(value = sum(value), flag = unique(flag)) |>
+    summarise(quantity = sum(quantity), flag = unique(flag)) |>
     ungroup()
 
   return(country_level_df)
