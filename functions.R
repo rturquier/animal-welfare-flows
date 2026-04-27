@@ -106,6 +106,61 @@ merge_regions_to_their_country <- function(trade_df) {
   return(country_level_df)
 }
 
+convert_liquid_eggs_to_n_eggs <- function(liquid_weight){
+  #' Based on https://IncredibleEgg.org/Conversion:
+  #' 50 whole eggs = 5 lbs 8 oz liquid eggs
+  #'               = 5 * 16 + 8 oz
+  #'               = 88 oz
+  #'               = 88 * 0.028349523125 kg
+  #'               = 2.494758 kg of liquid eggs
+  #' So:
+  #' 1 kg of liquid eggs = 50 / 2.494758
+  #'                     = 20.04202 whole eggs
+  n_eggs = liquid_weight * 20.04202
+  return(n_eggs)
+}
+
+convert_dried_eggs_to_n_eggs <- function(dried_weight){
+  #' Based on https://IncredibleEgg.org/Conversion:
+  #' 200 whole eggs = 6 lbs 4 oz dried eggs
+  #'                = 6 * 16 + 4 oz
+  #'                = 100 oz
+  #'                = 100 * 0.028349523125 kg
+  #'                = 2.834952 kg of dried eggs
+  #' So:
+  #' 1 kg of dried eggs = 200 / 2.834952
+  #'                    = 70.54793 whole eggs
+  n_eggs = dried_weight * 70.54793
+  return(n_eggs)
+}
+
+convert_shell_eggs_to_n_eggs <- function(shell_egg_weight){
+  #' There are several standards for shell egg weight categories:
+  #' https://en.wikipedia.org/wiki/Chicken_egg_sizes
+  #' This conversion uses 63g per egg, which corresponds to the minimum weight
+  #' of a Large egg in the EGG-1 UNECE standard.
+  n_eggs = shell_egg_weight / 0.063
+  return(n_eggs)
+}
+
+convert_egg_weight_to_n_eggs <- function(df){
+  egg_units <- df |> filter(item |> str_detect("[Ee]ggs")) |> select(unit)
+  stopifnot(all(egg_units == "kg"))
+
+  converted_df <- df |>
+    mutate(
+      quantity = case_match(
+        item,
+        "Eggs, liquid" ~ convert_liquid_eggs_to_n_eggs(quantity),
+        "Eggs, dried" ~ convert_dried_eggs_to_n_eggs(quantity),
+        "Hen eggs in shell, fresh" ~ convert_shell_eggs_to_n_eggs(quantity),
+        .default = quantity
+      ),
+      unit = if_else(item |> str_detect("[Ee]ggs"), "eggs", unit)
+    )
+  return(converted_df)
+}
+
 prepare_trade_df <- function(raw_trade_df){
   trade_df <- raw_trade_df |>
     rename(
@@ -113,34 +168,35 @@ prepare_trade_df <- function(raw_trade_df){
       partner = partner_countries,
       quantity = value
     ) |>
-      filter(
-        item |> str_detect(glue(r"([pP]igs?\b)",
-                                "[cC]hicken",
-                                "Poultry meat preparations",
-                                "Hen eggs",
-                                "Eggs, (dried|liquid)",
-                                .sep = "|")),
-        !(item |> str_detect("^Feed"))
-      ) |>
-      convert_FAO_units() |>
-      mutate(across(c(country, partner), normalize_trading_country_names)) |>
-      merge_regions_to_their_country() |>
-      mutate(
-        animal = case_when(
-          item |> str_detect("egg") ~ "hens",
-          item |> str_detect("[Cc]hicken") ~ "broilers",
-          # Assume that poultry meat preparations are all made with chicken
-          item == "Poultry meat preparations" ~ "broilers",
-          item |> str_detect("[Pp]ig") ~ "pigs",
-          .default = "other"
-        ),
-        quantity = if_else(item |> str_detect("preparations"),
-                           quantity * 0.2,
-                           quantity)
-        # Beef, pig and poultry meat _preparations_ include prepared meals that
-        # contain more than 20% of meat and offal by weight.
-        # --> conservatively multiply these items by 0.2.
-      )
+    filter(
+      item |> str_detect(glue(r"([pP]igs?\b)",
+                              "[cC]hicken",
+                              "Poultry meat preparations",
+                              "Hen eggs",
+                              "Eggs, (dried|liquid)",
+                              .sep = "|")),
+      !(item |> str_detect("^Feed"))
+    ) |>
+    convert_FAO_units() |>
+    mutate(across(c(country, partner), normalize_trading_country_names)) |>
+    merge_regions_to_their_country() |>
+    mutate(
+      animal = case_when(
+        item |> str_detect("[Ee]gg") ~ "hens",
+        item |> str_detect("[Cc]hicken") ~ "broilers",
+        # Assume that poultry meat preparations are all made with chicken
+        item == "Poultry meat preparations" ~ "broilers",
+        item |> str_detect("[Pp]ig") ~ "pigs",
+        .default = "other"
+      ),
+      # Beef, pig and poultry meat _preparations_ include prepared meals that
+      # contain more than 20% of meat and offal by weight.
+      # --> conservatively multiply these items by 0.2.
+      quantity = if_else(item |> str_detect("preparations"),
+                         quantity * 0.2,
+                         quantity)
+    ) |>
+    convert_egg_weight_to_n_eggs()
   return(trade_df)
 }
 
