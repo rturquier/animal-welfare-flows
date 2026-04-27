@@ -128,7 +128,9 @@ prepare_trade_df <- function(raw_trade_df){
       mutate(
         animal = case_when(
           item |> str_detect("egg") ~ "hens",
-          item |> str_detect("[Cc]hicken|Poultry meat") ~ "broilers",
+          item |> str_detect("[Cc]hicken") ~ "broilers",
+          # Assume that poultry meat preparations are all made with chicken
+          item == "Poultry meat preparations" ~ "broilers",
           item |> str_detect("[Pp]ig") ~ "pigs",
           .default = "other"
         ),
