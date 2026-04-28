@@ -200,11 +200,12 @@ prepare_trade_df <- function(raw_trade_df){
   return(trade_df)
 }
 
-consolidate_import_or_export <- function(self_reported, third_party_reported){
-  #' Consolidate a trade flow into a single value
+consolidate_trade_flow <- function(self_reported, third_party_reported){
+  #' Consolidate an import or export into a single value
   #'
   #' This function takes a self-reported and third-party-reported value for an
   #' import or export, and returns a single value.
+  #'
   #' The current approach is to:
   #' - select a non-missing value if possible,
   #' - select a non-null value if possible,

@@ -97,8 +97,8 @@ third_party_aggregated_trade_df <- trade_df |>
   ) |>
   rename(
    country = partner,
-   export_quantity = import_quantity,
-   import_quantity = export_quantity
+   export = import_quantity,
+   import = export_quantity
   )
 
 self_reported_aggregated_trade_df <- trade_df |>
@@ -107,6 +107,10 @@ self_reported_aggregated_trade_df <- trade_df |>
   pivot_wider(
     names_from = element,
     values_from = quantity
+  ) |>
+  rename(
+    import = import_quantity,
+    export = export_quantity
   )
 
 aggregated_trade_df <-
@@ -117,8 +121,8 @@ aggregated_trade_df <-
     suffix = c("_self_reported", "_third_party")
   ) |>
   mutate(
-    import = consolidate_import_or_export(import_quantity_self_reported, import_quantity_third_party),
-    export = consolidate_import_or_export(export_quantity_self_reported, export_quantity_third_party)
+    import = consolidate_trade_flow(import_self_reported, import_third_party),
+    export = consolidate_trade_flow(export_self_reported, export_third_party)
   )
 
 # Quick plot of French egg importations ------------------------------
@@ -128,7 +132,7 @@ france_df <- trade_df |>
   filter(
     country == "France",
     animal == "hens",
-    element == "import_quantity"
+    element == "import"
   ) |>
   ungroup() |>
   group_by(year, item) |>
