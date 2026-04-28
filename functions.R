@@ -200,6 +200,28 @@ prepare_trade_df <- function(raw_trade_df){
   return(trade_df)
 }
 
+consolidate_import_or_export <- function(self_reported, third_party_reported){
+  #' Consolidate a trade flow into a single value
+  #'
+  #' This function takes a self-reported and third-party-reported value for an
+  #' import or export, and returns a single value.
+  #' The current approach is to:
+  #' - select a non-missing value if possible,
+  #' - select a non-null value if possible,
+  #' - if two non-missing and non-null values are available, return the third-
+  #'   party-reported one.
+  #' The idea is that the overestimation of trade flows is less likely with a
+  #' multitude of reporter countries than with a single reporter country.
+  consolidated_value <- case_when(
+    self_reported |> is.na() & third_party_reported |> is.na() ~ NA,
+    self_reported |> is.na() ~ third_party_reported,
+    third_party_reported |> is.na() ~ self_reported,
+    self_reported == 0 ~ third_party_reported,
+    third_party_reported == 0 ~ self_reported,
+    .default = third_party_reported
+  )
+  return(consolidated_value)
+}
 
 extract_ciwf_cage_data <- function() {
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
