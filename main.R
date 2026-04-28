@@ -5,6 +5,7 @@ library("FAOSTAT")
 library("readxl")
 library("countrycode")
 library("pdftools")
+library("maps")
 
 # Functions --------------------------------------------------------------
 source("functions.R")
@@ -89,6 +90,22 @@ production_df |>
 trade_df <- prepare_trade_data(raw_trade_df)
 aggregated_trade_df <- aggregate_trade_data(trade_df)
 
+# Map net export flows ---------------------------------------------------
+
+worldmap_df <- map_data("world") |> mutate(country = countryname(region))
+
+aggregated_trade_df |>
+  filter(
+    year == max(year),
+    animal == "pigs",
+    unit == "kg"
+  ) |>
+  mutate(across(where(is.double), ~ . / 10^9), unit = "Mt") |>
+  inner_join(worldmap_df, by = "country") |>
+  ggplot(aes(x = long, y = lat, group = group)) +
+    coord_fixed(1.2) +
+    geom_polygon(aes(fill = net_export)) +
+  scale_fill_gradient2(high = "#D13C4B", mid = "#FBF8B0", low = "#4288B5", midpoint = 0)
 
 # Quick plot of French egg importations ------------------------------
 library("slider")
