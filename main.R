@@ -86,44 +86,9 @@ production_df |>
   select(area, animal, year, slaughter_rate)
 
 # Wrangle trade data ------------------------------------------------------
-trade_df <- raw_trade_df |> prepare_trade_df()
+trade_df <- prepare_trade_data(raw_trade_df)
+aggregated_trade_df <- aggregate_trade_data(trade_df)
 
-third_party_aggregated_trade_df <- trade_df |>
-  group_by(partner, year, element, animal, unit) |>
-  summarise(quantity = sum(quantity), .groups = "drop") |>
-  pivot_wider(
-    names_from = element,
-    values_from = quantity
-  ) |>
-  rename(
-   country = partner,
-   export = import_quantity,
-   import = export_quantity
-  )
-
-self_reported_aggregated_trade_df <- trade_df |>
-  group_by(country, year, element, animal, unit) |>
-  summarise(quantity = sum(quantity), .groups = "drop") |>
-  pivot_wider(
-    names_from = element,
-    values_from = quantity
-  ) |>
-  rename(
-    import = import_quantity,
-    export = export_quantity
-  )
-
-aggregated_trade_df <-
-  full_join(
-    self_reported_aggregated_trade_df,
-    third_party_aggregated_trade_df,
-    by = c("country", "year", "animal", "unit"),
-    suffix = c("_self_reported", "_third_party")
-  ) |>
-  mutate(
-    import = consolidate_trade_flow(import_self_reported, import_third_party),
-    export = consolidate_trade_flow(export_self_reported, export_third_party)
-  )
 
 # Quick plot of French egg importations ------------------------------
 library("slider")

@@ -161,7 +161,7 @@ convert_egg_weight_to_n_eggs <- function(df){
   return(converted_df)
 }
 
-prepare_trade_df <- function(raw_trade_df){
+prepare_trade_data <- function(raw_trade_df){
   trade_df <- raw_trade_df |>
     rename(
       country = reporter_countries,
@@ -223,6 +223,45 @@ consolidate_trade_flow <- function(self_reported, third_party_reported){
   )
   return(consolidated_value)
 }
+
+aggregate_trade_data <- function(trade_df){
+  third_party_aggregated_trade_df <- trade_df |>
+    group_by(partner, year, element, animal, unit) |>
+    summarise(quantity = sum(quantity), .groups = "drop") |>
+    pivot_wider(
+      names_from = element,
+      values_from = quantity
+    ) |>
+    rename(
+     country = partner,
+     export = import_quantity,
+     import = export_quantity
+    )
+
+  self_reported_aggregated_trade_df <- trade_df |>
+    group_by(country, year, element, animal, unit) |>
+    summarise(quantity = sum(quantity), .groups = "drop") |>
+    pivot_wider(
+      names_from = element,
+      values_from = quantity
+    ) |>
+    rename(import = import_quantity, export = export_quantity)
+
+  aggregated_trade_df <-
+    full_join(
+      self_reported_aggregated_trade_df,
+      third_party_aggregated_trade_df,
+      by = c("country", "year", "animal", "unit"),
+      suffix = c("_self_reported", "_third_party")
+    ) |>
+    mutate(
+      import = consolidate_trade_flow(import_self_reported, import_third_party),
+      export = consolidate_trade_flow(export_self_reported, export_third_party),
+      net_export = export - import
+    )
+  return(aggregated_trade_df)
+}
+
 
 extract_ciwf_cage_data <- function() {
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
