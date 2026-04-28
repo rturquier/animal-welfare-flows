@@ -116,9 +116,21 @@ aggregated_trade_df <-
     by = c("country", "year", "animal", "unit"),
     suffix = c("_self_reported", "_third_party")
   ) |>
-  mutate(import_relative_difference =
-           import_quantity_self_reported / import_quantity_third_party)
+  mutate(
+    import_relative_difference = import_quantity_self_reported
+                                 / import_quantity_third_party,
+    export_relative_difference = export_quantity_self_reported
+                                 / export_quantity_third_party,
+  )
 
+# Look for large differences between self- and third-party-reported figures
+large_difference_df <- aggregated_trade_df |> filter(
+  import_relative_difference > 10
+  | (import_relative_difference < 0.1 & import_relative_difference > 0)
+  | export_relative_difference > 10
+  | (export_relative_difference < 0.1 & export_relative_difference > 0),
+  year == 2024
+)
 
 # Quick plot of French egg importations ------------------------------
 library("slider")
