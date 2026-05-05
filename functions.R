@@ -15,6 +15,13 @@ download_production_data <- download_wrapper(function(file_path) {
   get_faostat_bulk("QCL") |> saveRDS(file_path)
 })
 
+download_trade_data <- download_wrapper(function(file_path) {
+  TCL_url <- glue("https://bulks-faostat.fao.org/production/",
+                  "Trade_CropsLivestock_E_All_Data_(Normalized).zip")
+  # Using the URL because the normal API request was failing for some reason
+  get_faostat_bulk_url(TCL_url) |> saveRDS(file_path)
+})
+
 download_trade_matrix <- download_wrapper(function(file_path) {
   # Select columns & filter rows for faster speed when reading file from disk
   get_faostat_bulk("TM")  |>

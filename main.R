@@ -12,15 +12,18 @@ source("functions.R")
 
 # Download FAO data -------------------------------------------------------
 production_data_path <- "data/raw/production.rds"
+trade_data_path <- "data/raw/trade.rds"
 trade_matrix_path <- "data/raw/trade_matrix.rds"
 
 # Go to https://www.fao.org/faostat/en/#developer-portal to get FAO credentials.
 # You might need to run `faostat_login()` to connect.
 download_production_data(production_data_path)
+download_trade_data(trade_data_path)
 download_trade_matrix(trade_matrix_path)
 
 # Read downloaded data ----------------------------------------------------
 raw_production_df <- read_rds(production_data_path)
+raw_trade_df <- read_rds(trade_data_path)
 raw_trade_matrix <- read_rds(trade_matrix_path)
 
 # Scope -------------------------------------------------------------------
