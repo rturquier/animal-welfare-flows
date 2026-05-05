@@ -12,16 +12,16 @@ source("functions.R")
 
 # Download FAO data -------------------------------------------------------
 production_data_path <- "data/raw/production.rds"
-trade_data_path <- "data/raw/trade.rds"
+trade_matrix_path <- "data/raw/trade_matrix.rds"
 
 # Go to https://www.fao.org/faostat/en/#developer-portal to get FAO credentials.
 # You might need to run `faostat_login()` to connect.
 download_production_data(production_data_path)
-download_trade_data(trade_data_path)
+download_trade_matrix(trade_matrix_path)
 
 # Read downloaded data ----------------------------------------------------
 raw_production_df <- read_rds(production_data_path)
-raw_trade_df <- read_rds(trade_data_path)
+raw_trade_matrix <- read_rds(trade_matrix_path)
 
 # Scope -------------------------------------------------------------------
 scope <- list(
@@ -87,14 +87,14 @@ production_df |>
   select(area, animal, year, slaughter_rate)
 
 # Wrangle trade data ------------------------------------------------------
-trade_df <- prepare_trade_data(raw_trade_df)
-aggregated_trade_df <- aggregate_trade_data(trade_df)
+trade_matrix <- prepare_trade_matrix(raw_trade_matrix)
+aggregated_trade_matrix <- aggregate_trade_matrix(trade_matrix)
 
 # Map net export flows ---------------------------------------------------
 
 worldmap_df <- map_data("world") |> mutate(country = countryname(region))
 
-aggregated_trade_df |>
+aggregated_trade_matrix |>
   filter(
     year == max(year),
     animal == "pigs",
@@ -110,7 +110,7 @@ aggregated_trade_df |>
 # Quick plot of French egg importations ------------------------------
 library("slider")
 
-france_df <- trade_df |>
+france_df <- trade_matrix |>
   filter(
     country == "France",
     animal == "hens",

@@ -15,7 +15,7 @@ download_production_data <- download_wrapper(function(file_path) {
   get_faostat_bulk("QCL") |> saveRDS(file_path)
 })
 
-download_trade_data <- download_wrapper(function(file_path) {
+download_trade_matrix <- download_wrapper(function(file_path) {
   # Select columns & filter rows for faster speed when reading file from disk
   get_faostat_bulk("TM")  |>
     select(
@@ -82,8 +82,8 @@ normalize_trading_country_names <- function(country_names) {
   return(normalized_country_names)
 }
 
-merge_regions_to_their_country <- function(trade_df) {
-  country_level_df <- trade_df |>
+merge_regions_to_their_country <- function(trade_matrix) {
+  country_level_df <- trade_matrix |>
     mutate(
       across(
         c(country, partner),
@@ -161,8 +161,8 @@ convert_egg_weight_to_n_eggs <- function(df){
   return(converted_df)
 }
 
-prepare_trade_data <- function(raw_trade_df){
-  trade_df <- raw_trade_df |>
+prepare_trade_matrix <- function(raw_trade_matrix){
+  trade_matrix <- raw_trade_matrix |>
     rename(
       country = reporter_countries,
       partner = partner_countries,
@@ -197,7 +197,7 @@ prepare_trade_data <- function(raw_trade_df){
                          quantity)
     ) |>
     convert_egg_weight_to_n_eggs()
-  return(trade_df)
+  return(trade_matrix)
 }
 
 consolidate_trade_flow <- function(self_reported, third_party_reported){
@@ -224,8 +224,8 @@ consolidate_trade_flow <- function(self_reported, third_party_reported){
   return(consolidated_value)
 }
 
-aggregate_trade_data <- function(trade_df){
-  third_party_aggregated_trade_df <- trade_df |>
+aggregate_trade_matrix <- function(trade_matrix){
+  third_party_aggregated_trade_matrix <- trade_matrix |>
     group_by(partner, year, element, animal, unit) |>
     summarise(quantity = sum(quantity), .groups = "drop") |>
     pivot_wider(
@@ -238,7 +238,7 @@ aggregate_trade_data <- function(trade_df){
      import = export_quantity
     )
 
-  self_reported_aggregated_trade_df <- trade_df |>
+  self_reported_aggregated_trade_matrix <- trade_matrix |>
     group_by(country, year, element, animal, unit) |>
     summarise(quantity = sum(quantity), .groups = "drop") |>
     pivot_wider(
@@ -247,10 +247,10 @@ aggregate_trade_data <- function(trade_df){
     ) |>
     rename(import = import_quantity, export = export_quantity)
 
-  aggregated_trade_df <-
+  aggregated_trade_matrix <-
     full_join(
-      self_reported_aggregated_trade_df,
-      third_party_aggregated_trade_df,
+      self_reported_aggregated_trade_matrix,
+      third_party_aggregated_trade_matrix,
       by = c("country", "year", "animal", "unit"),
       suffix = c("_self_reported", "_third_party")
     ) |>
@@ -259,7 +259,7 @@ aggregate_trade_data <- function(trade_df){
       export = consolidate_trade_flow(export_self_reported, export_third_party),
       net_export = export - import
     )
-  return(aggregated_trade_df)
+  return(aggregated_trade_matrix)
 }
 
 
