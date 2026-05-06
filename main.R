@@ -94,6 +94,21 @@ trade_df <- prepare_trade_df(raw_trade_df)
 trade_matrix <- prepare_trade_matrix(raw_trade_matrix)
 aggregated_trade_matrix <- aggregate_trade_matrix(trade_matrix)
 
+# Plot evolution of global meat flows
+global_meat_df <- trade_df |>
+  filter(country == "World") |>
+  group_by(year) |>
+  summarise(
+    across(c(import, export), ~ sum(.x, na.rm = TRUE)),
+    unit = unique(unit),
+  ) |>
+  mutate(across(c(import, export), ~ .x / 10^9), unit = "Mt")
+
+global_meat_imports_plot <- global_meat_df |>
+  ggplot(aes(year, import)) +
+    geom_line()
+global_meat_imports_plot
+
 # Map net export flows ---------------------------------------------------
 
 worldmap_df <- map_data("world") |> mutate(country = countryname(region))
