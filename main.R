@@ -122,6 +122,7 @@ trade_df <- raw_trade_df |>
     note
   ) |>
   convert_FAO_units() |>
+  adjust_meat_preparations() |>
   pivot_wider(
     names_from = element,
     values_from = quantity

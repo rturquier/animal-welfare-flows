@@ -168,6 +168,32 @@ convert_egg_weight_to_n_eggs <- function(df){
   return(converted_df)
 }
 
+adjust_meat_preparations <- function(FAO_df) {
+  #' Beef, pig and poultry meat _preparations_ include prepared meals that
+  #' contain more than 20% of meat and offal by weight.
+  #' ––> conservatively multiply these items by 0.2.
+
+  #' Code to get list of items to multiply by 0.2:
+  # read_dimension_metadata("TCL", "item") |>
+  # filter(Description |> str_detect(glue("Includes prepared meals that",
+  #                                       " contain more ?than 20% of meat",
+  #                                       " and offal by weight")),
+  #        Item |> str_detect("preparation")) |>
+  # pull(Item)
+
+  items_to_multiply_by_0.2 <- c("Beef and veal preparations nes",
+                                "Pig meat preparations",
+                                "Poultry meat preparations")
+
+  adjusted_df <- FAO_df |> mutate(
+    quantity = if_else(item %in% items_to_multiply_by_0.2,
+                       quantity * 0.2,
+                       quantity)
+  )
+
+  return(adjusted_df)
+}
+
 prepare_trade_matrix <- function(raw_trade_matrix){
   trade_matrix <- raw_trade_matrix |>
     rename(
@@ -195,14 +221,9 @@ prepare_trade_matrix <- function(raw_trade_matrix){
         item == "Poultry meat preparations" ~ "broilers",
         item |> str_detect("[Pp]ig") ~ "pigs",
         .default = "other"
-      ),
-      # Beef, pig and poultry meat _preparations_ include prepared meals that
-      # contain more than 20% of meat and offal by weight.
-      # --> conservatively multiply these items by 0.2.
-      quantity = if_else(item |> str_detect("preparations"),
-                         quantity * 0.2,
-                         quantity)
+      )
     ) |>
+    adjust_meat_preparations() |>
     convert_egg_weight_to_n_eggs()
   return(trade_matrix)
 }
