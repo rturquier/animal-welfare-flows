@@ -194,6 +194,56 @@ adjust_meat_preparations <- function(FAO_df) {
   return(adjusted_df)
 }
 
+get_all_FAO_meat_items <- function(){
+  #' The "TCL" dataset has an aggregate for all "Meat and Meat Preparation", but
+  #' it only has monetary values, not quantities. To get total quantities of
+  #' meat, get a list of all items included in the aggregate, and sum their
+  #' quantities.
+  all_meat_items <- read_fao(
+    area_codes = "5000",  # World
+    element_codes = "2920",  # Export value
+    item_codes = "1885>",  # Meat and Meat Preparations > (List)
+    year_codes = "2024",
+    dataset = "TCL"
+  ) |>
+    select(Item) |>
+    unique() |>
+    pull()
+  return(all_meat_items)
+}
+
+prepare_trade_df <- function(raw_trade_df) {
+  all_meat_items <- get_all_FAO_meat_items()
+
+  trade_df <- raw_trade_df |>
+    filter(
+      item %in% all_meat_items,
+      element %in% c("import_quantity", "export_quantity")
+    ) |>
+    select(
+      area_code,
+      country = area,
+      year,
+      item,
+      element,
+      quantity = value,
+      unit,
+      flag,
+      note
+    ) |>
+    convert_FAO_units() |>
+    adjust_meat_preparations() |>
+    pivot_wider(
+      names_from = element,
+      values_from = quantity
+    ) |>
+    rename(
+      import = import_quantity,
+      export = export_quantity
+    )
+  return(trade_df)
+}
+
 prepare_trade_matrix <- function(raw_trade_matrix){
   trade_matrix <- raw_trade_matrix |>
     rename(

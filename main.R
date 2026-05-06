@@ -90,48 +90,7 @@ production_df |>
   select(area, animal, year, slaughter_rate)
 
 # Wrangle trade data ------------------------------------------------------
-#' The "TCL" dataset has an aggregate for all "Meat and Meat Preparation", but
-#' it only has monetary values, not quantities. To get total quantities of
-#' meat, get a list of all items included in the aggregate, and sum their
-#' quantities.
-all_meat_items <- read_fao(
-    area_codes = "5000",  # World
-    element_codes = "2920",  # Export value
-    item_codes = "1885>",  # Meat and Meat Preparations > (List)
-    year_codes = "2024",
-    dataset = "TCL"
-  ) |>
-  select(Item) |>
-  unique() |>
-  pull()
-
-trade_df <- raw_trade_df |>
-  filter(
-    item %in% all_meat_items,
-    element %in% c("import_quantity", "export_quantity")
-  ) |>
-  select(
-    area_code,
-    country = area,
-    year,
-    item,
-    element,
-    quantity = value,
-    unit,
-    flag,
-    note
-  ) |>
-  convert_FAO_units() |>
-  adjust_meat_preparations() |>
-  pivot_wider(
-    names_from = element,
-    values_from = quantity
-  ) |>
-  rename(
-    import = import_quantity,
-    export = export_quantity
-  )
-
+trade_df <- prepare_trade_df(raw_trade_df)
 trade_matrix <- prepare_trade_matrix(raw_trade_matrix)
 aggregated_trade_matrix <- aggregate_trade_matrix(trade_matrix)
 
