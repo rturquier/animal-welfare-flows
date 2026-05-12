@@ -104,36 +104,10 @@ ggsave(
   units = "px"
 )
 
-# Map net export flows ---------------------------------------------------
-worldmap_df <- map_data("world") |> mutate(country = countryname(region))
+# Map net exports --------------------------------------------------------
+trade_df |> map_net_exports()
 
-trade_df |>
-  filter(country %in% get_all_FAO_countries()) |>
-  mutate(country = countryname(country)) |>
-  group_by(country) |>
-  filter(
-    year == max(year),
-    item == "Meat of chickens, fresh or chilled"
-  ) |>
-  ungroup() |>
-  mutate(
-    across(where(is.double), ~ . / 10^9),
-    unit = "Mt"
-  ) |>
-  inner_join(worldmap_df, by = "country") |>
-  ggplot(aes(x = long, y = lat, group = group)) +
-    coord_fixed(1.2) +
-    geom_polygon(aes(fill = net_export)) +
-    scale_fill_gradient2(
-      high = "#D13C4B",
-      mid = "#FBF8B0",
-      low = "#4288B5",
-      midpoint = 0
-    ) +
-    theme_void() +
-    labs(fill = "Net exports,\nchicken meat,\n2024 (Mt)")
-
-# Quick plot of French egg importations ------------------------------
+# Quick plot of French egg importations ---------------------------------
 library("slider")
 
 france_df <- trade_matrix |>

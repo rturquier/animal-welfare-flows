@@ -453,3 +453,44 @@ plot_housing_shares <- function(hen_housing_df, country_name){
 
   return(housing_shares_plot)
 }
+
+map_net_exports <- function(
+    trade_df,
+    year = NULL,
+    item = "Meat of chickens, fresh or chilled"
+) {
+  if(year |> is.null()) {year = max(trade_df$year)}
+
+  worldmap_df <- map_data("world") |>
+    mutate(country = countryname(region, warn=FALSE))
+
+  net_export_df <- trade_df |>
+    filter(country %in% get_all_FAO_countries()) |>
+    mutate(country = countryname(country)) |>
+    group_by(country) |>
+    filter(
+      year == !!year,
+      item == !!item
+    ) |>
+    ungroup() |>
+    mutate(
+      across(where(is.double), ~ . / 10^9),
+      unit = "Mt"
+    )
+
+  net_export_map <- net_export_df |>
+    inner_join(worldmap_df, by = "country") |>
+    ggplot(aes(x = long, y = lat, group = group)) +
+    coord_fixed(1.2) +
+    geom_polygon(aes(fill = net_export)) +
+    scale_fill_gradient2(
+      high = "#D13C4B",
+      mid = "#FBF8B0",
+      low = "#4288B5",
+      midpoint = 0
+    ) +
+    theme_void() +
+    labs(fill = glue("Net exports,\nchicken meat,\n{year} (Mt)"))
+  return(net_export_map)
+}
+
