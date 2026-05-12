@@ -240,9 +240,11 @@ prepare_trade_df <- function(raw_trade_df) {
     rename(
       import = import_quantity,
       export = export_quantity
-    )
+    ) |>
+    mutate(net_export = export - import)
   return(trade_df)
 }
+
 
 prepare_trade_matrix <- function(raw_trade_matrix){
   trade_matrix <- raw_trade_matrix |>
@@ -379,6 +381,29 @@ extract_ciwf_cage_data <- function() {
     mutate(country = countrycode(country, "country.name", "country.name.en"))
 
   return(ciwf_cage_df)
+}
+
+
+plot_global_meat_imports <- function(trade_df){
+  global_meat_df <- trade_df |>
+    filter(country == "World") |>
+    group_by(year) |>
+    summarise(
+      across(c(import, export), ~ sum(.x, na.rm = TRUE)),
+      unit = unique(unit),
+    ) |>
+    mutate(across(c(import, export), ~ .x / 10^9), unit = "Mt")
+
+  global_meat_imports_plot <- global_meat_df |>
+    ggplot(aes(year, import)) +
+    geom_line() +
+    labs(
+      x = "",
+      y = "",
+      title = "Global importations of meat products (Mt)",
+    ) +
+    theme_minimal()
+  return(global_meat_imports_plot)
 }
 
 plot_housing_shares <- function(hen_housing_df, country_name){

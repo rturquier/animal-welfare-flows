@@ -1,7 +1,7 @@
 # --- Project-specific files ---
-# Data
+# Data and figures
 data/
-
+figures/
 
 # --- MacOS ---
 .DS_Store
