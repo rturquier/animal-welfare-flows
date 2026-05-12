@@ -212,6 +212,20 @@ get_all_FAO_meat_items <- function(){
   return(all_meat_items)
 }
 
+get_all_FAO_countries <- function(){
+  all_countries <- read_fao(
+    area_codes = "5000>",  # World > (List of countries in the "World" group)
+    element_codes = "2620",  # Import value
+    item_codes = "10",  # Total Merchandise Trade
+    year_codes = "2024",
+    dataset = "TCL"
+  ) |>
+    select(Area) |>
+    unique() |>
+    pull()
+  return(all_countries)
+}
+
 prepare_trade_df <- function(raw_trade_df) {
   all_meat_items <- get_all_FAO_meat_items()
 
