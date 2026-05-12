@@ -227,9 +227,7 @@ prepare_trade_df <- function(raw_trade_df) {
       item,
       element,
       quantity = value,
-      unit,
-      flag,
-      note
+      unit
     ) |>
     convert_FAO_units() |>
     adjust_meat_preparations() |>
