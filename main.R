@@ -106,6 +106,13 @@ ggsave(
 
 # Map net exports --------------------------------------------------------
 trade_df |> map_net_exports()
+ggsave(
+  "figures/net_chicken_meat_exports.svg",
+  width = 600,
+  height = 300,
+  scale = 3.5,
+  units = "px"
+)
 
 # Quick plot of French egg importations ---------------------------------
 library("slider")
