@@ -42,37 +42,7 @@ scope <- list(
 )
 
 # Wrangle production data -------------------------------------------------
-production_df <- raw_production_df |>
-  rename(quantity = value) |>
-  filter(
-    item %in% scope$items,
-    element %in% scope$elements
-  ) |>
-  convert_FAO_units() |>
-  mutate(
-    animal = case_when(
-      item |> str_detect("C|chickens") ~ "broilers",
-      item == "Hen eggs in shell, fresh" ~ "hens",
-      item |> str_detect("pig") ~ "pigs",
-      .default = "other"
-    ),
-    variable_name = case_when(
-      element == "producing_animals_slaughtered" ~ "n_slaughtered",
-      element %in% c("stocks", "laying") ~ "n_animals",
-      item |> str_detect("eggs") & unit == "number" ~ "n_eggs",
-      element == "production" ~ "production_{unit}" |> glue()
-    )
-  ) |>
-  select(area, year, animal, variable_name, quantity) |>
-  pivot_wider(
-    names_from = variable_name,
-    values_from = quantity
-  ) |>
-  arrange(area, year) |>
-  mutate(
-    slaughter_rate = n_slaughtered / n_animals,
-    weight_per_animal = production_kg / n_slaughtered
-  )
+production_df <- prepare_production_df(raw_production_df)
 
 # Quick scatter plot of the two proxies ------------------------------------
 animal_to_plot <- "broilers"
