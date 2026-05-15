@@ -74,10 +74,17 @@ convert_FAO_units <- function(FAO_df){
   return(converted_FAO_df)
 }
 
-normalize_trading_country_names <- function(country_names) {
+normalize_FAO_country_names <- function(country_names) {
   special_cases <- c(
     "TÃ¼rkiye" = "Turkey",
-    "RÃ©union" = "Réunion"
+    "RÃ©union" = "Réunion",
+    # For China, follow OWID: https://docs.owid.io/projects/etl/data/faostat/#harmonization-of-country-name
+    "China" = "China (FAO)",
+    "China, mainland" = "China",
+    # Prevent `countrycode` function matching "Australia and New Zealand" as
+    # "Australia" or "New Zealand" (which would cause unwanted `NA`s)
+    "Australia and New Zealand" = "Australia and New Zealand"
+
   )
   normalized_country_names <- countrycode(
     country_names,
@@ -228,13 +235,14 @@ get_all_FAO_countries <- function(){
 
 prepare_production_df <- function(raw_production_df) {
   production_df <- raw_production_df |>
-    rename(quantity = value) |>
+    rename(quantity = value, country = area) |>
     filter(
       item %in% scope$items,
       element %in% scope$elements
     ) |>
     convert_FAO_units() |>
     mutate(
+      country = normalize_FAO_country_names(country),
       animal = case_when(
         item |> str_detect("C|chickens") ~ "broilers",
         item == "Hen eggs in shell, fresh" ~ "hens",
@@ -248,12 +256,12 @@ prepare_production_df <- function(raw_production_df) {
         element == "production" ~ "production_{unit}" |> glue()
       )
     ) |>
-    select(area, year, animal, variable_name, quantity) |>
+    select(country, year, animal, variable_name, quantity) |>
     pivot_wider(
       names_from = variable_name,
       values_from = quantity
     ) |>
-    arrange(area, year) |>
+    arrange(country, year) |>
     mutate(
       slaughter_rate = n_slaughtered / n_animals,
       weight_per_animal = production_kg / n_slaughtered,
@@ -312,7 +320,7 @@ prepare_trade_matrix <- function(raw_trade_matrix){
       !(item |> str_detect("^Feed"))
     ) |>
     convert_FAO_units() |>
-    mutate(across(c(country, partner), normalize_trading_country_names)) |>
+    mutate(across(c(country, partner), normalize_FAO_country_names)) |>
     merge_regions_to_their_country() |>
     mutate(
       animal = case_when(
