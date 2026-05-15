@@ -256,7 +256,9 @@ prepare_production_df <- function(raw_production_df) {
     arrange(area, year) |>
     mutate(
       slaughter_rate = n_slaughtered / n_animals,
-      weight_per_animal = production_kg / n_slaughtered
+      weight_per_animal = production_kg / n_slaughtered,
+      lifespan = (1 / slaughter_rate) * seas::year.length(year),  # in days
+      ADG = weight_per_animal / lifespan
     )
   return(production_df)
 }

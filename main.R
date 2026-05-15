@@ -6,6 +6,7 @@ library("readxl")
 library("countrycode")
 library("pdftools")
 library("maps")
+library("seas")
 
 # Functions --------------------------------------------------------------
 source("functions.R")
