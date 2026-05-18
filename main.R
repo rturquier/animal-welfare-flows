@@ -43,7 +43,7 @@ scope <- list(
 )
 
 # Wrangle production data -------------------------------------------------
-production_df <- prepare_production_df(raw_production_df)
+production_df <- prepare_production_df(raw_production_df, scope)
 
 # Quick scatter plot of the two proxies ------------------------------------
 animal_to_plot <- "broilers"

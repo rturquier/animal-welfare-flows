@@ -233,7 +233,7 @@ get_all_FAO_countries <- function(){
   return(all_countries)
 }
 
-prepare_production_df <- function(raw_production_df) {
+prepare_production_df <- function(raw_production_df, scope) {
   production_df <- raw_production_df |>
     rename(quantity = value, country = area) |>
     filter(
