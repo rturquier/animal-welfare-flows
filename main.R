@@ -62,7 +62,7 @@ production_df |>
 # Look for outliers
 production_df |>
   filter(slaughter_rate > 10, year > 2020) |>
-  select(area, animal, year, slaughter_rate)
+  select(country, animal, year, slaughter_rate)
 
 # Wrangle trade data ------------------------------------------------------
 trade_df <- prepare_trade_df(raw_trade_df)
