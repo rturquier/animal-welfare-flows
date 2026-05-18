@@ -8,6 +8,10 @@ library("pdftools")
 library("maps")
 library("seas")
 
+# Prevent MASS from masking common dplyr functions
+library("conflicted")
+conflicts_prefer(dplyr::select(), dplyr::filter())
+
 # Functions --------------------------------------------------------------
 source("functions.R")
 
