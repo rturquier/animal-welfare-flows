@@ -89,7 +89,6 @@ ggsave(
   units = "px"
 )
 
-
 # Map Average Daily weight Gain (ADG) -------------------------------------
 worldmap_df <- map_data("world") |>
   mutate(country = countryname(region, warn=FALSE))
@@ -106,7 +105,7 @@ ADG_map <- production_df |>
   ggplot(aes(x = long, y = lat, group = group)) +
     coord_fixed(1.2) +
     geom_polygon(aes(fill = ADG)) +
-    scale_fill_continuous(palette = "viridis") +
+    scale_fill_binned(palette = "viridis", breaks = c(5, 15, 30, 60, 100)) +
     theme_void() +
     labs(fill = glue("Average daily\nweight gain, 2024 (g/day)"))
 ADG_map

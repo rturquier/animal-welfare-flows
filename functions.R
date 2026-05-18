@@ -523,19 +523,28 @@ map_net_exports <- function(
       unit = "Mt"
     )
 
+  palette <- c(
+    "#008A80",
+    "#66D4CC",
+    "#FEE4E4",
+    "#FEA19E",
+    "#FD817E",
+    "#BE4A47",
+    "#7F312F"
+  )
+
   net_export_map <- net_export_df |>
     inner_join(worldmap_df, by = "country") |>
     ggplot(aes(x = long, y = lat, group = group)) +
     coord_fixed(1.2) +
     geom_polygon(aes(fill = net_export)) +
-    scale_fill_gradient2(
-      high = "#D13C4B",
-      mid = "#FBF8B0",
-      low = "#4288B5",
-      midpoint = 0
+    scale_fill_stepsn(
+      colours = palette,
+      breaks = c(-1, 0, 1, 2, 3, 4),
+      limits = c(-2, 5),
+      right = FALSE
     ) +
     theme_void() +
     labs(fill = glue("Net exports,\nchicken meat,\n{year} (Mt)"))
   return(net_export_map)
 }
-
