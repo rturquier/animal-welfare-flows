@@ -440,6 +440,15 @@ extract_ciwf_cage_data <- function() {
   return(ciwf_cage_df)
 }
 
+save_fig <- function(file_name, width = 600, height = 300, scale = 3.5) {
+  ggsave(
+    glue("figures/{file_name}"),
+    width = width,
+    height = height,
+    scale = scale,
+    units = "px"
+  )
+}
 
 plot_global_meat_imports <- function(trade_df){
   global_meat_df <- trade_df |>

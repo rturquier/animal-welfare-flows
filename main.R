@@ -71,33 +71,15 @@ aggregated_trade_matrix <- aggregate_trade_matrix(trade_matrix)
 
 # Plot evolution of global meat flows -------------------------------------
 plot_global_meat_imports(trade_df)
-ggsave(
-  "figures/global_meat_imports.svg",
-  width = 600,
-  height = 300,
-  scale = 3.5,
-  units = "px"
-)
+save_fig("global_meat_imports.svg")
 
 # Map net exports --------------------------------------------------------
 trade_df |> map_net_exports()
-ggsave(
-  "figures/net_chicken_meat_exports.svg",
-  width = 600,
-  height = 300,
-  scale = 3.5,
-  units = "px"
-)
+save_fig("net_chicken_meat_exports.svg")
 
 # Map Average Daily weight Gain (ADG) -------------------------------------
 production_df |> map_ADG()
-ggsave(
-  "figures/ADG.svg",
-  width = 600,
-  height = 300,
-  scale = 3.5,
-  units = "px"
-)
+save_fig("ADG.svg")
 
 # Quick plot of French egg importations ---------------------------------
 library("slider")
