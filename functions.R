@@ -548,3 +548,26 @@ map_net_exports <- function(
     labs(fill = glue("Net exports,\nchicken meat,\n{year} (Mt)"))
   return(net_export_map)
 }
+
+map_ADG <- function(production_df, year = NULL) {
+  if(year |> is.null()) {year = max(production_df$year)}
+
+  worldmap_df <- map_data("world") |>
+    mutate(country = countryname(region, warn=FALSE))
+
+  ADG_map <- production_df |>
+    filter(
+      year == !!year,
+      animal == "broilers",
+      # country != "Iceland"  # Iceland outlier to be investigated
+    ) |>
+    inner_join(worldmap_df, by = "country") |>
+    ggplot(aes(x = long, y = lat, group = group)) +
+    coord_fixed(1.2) +
+    geom_polygon(aes(fill = ADG)) +
+    scale_fill_binned(palette = "viridis", breaks = c(5, 15, 30, 60, 100)) +
+    theme_void() +
+    labs(fill = glue("Average daily\nweight gain,\n2024 (g/day)"))
+
+  return(ADG_map)
+}

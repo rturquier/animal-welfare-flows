@@ -90,25 +90,7 @@ ggsave(
 )
 
 # Map Average Daily weight Gain (ADG) -------------------------------------
-worldmap_df <- map_data("world") |>
-  mutate(country = countryname(region, warn=FALSE))
-
-production_df |> mutate(country = countryname(country))
-
-ADG_map <- production_df |>
-  filter(
-    year == max(year),
-    animal == "broilers",
-    # country != "Iceland"  # Iceland outlier to be investigated
-  ) |>
-  inner_join(worldmap_df, by = "country") |>
-  ggplot(aes(x = long, y = lat, group = group)) +
-    coord_fixed(1.2) +
-    geom_polygon(aes(fill = ADG)) +
-    scale_fill_binned(palette = "viridis", breaks = c(5, 15, 30, 60, 100)) +
-    theme_void() +
-    labs(fill = glue("Average daily\nweight gain, 2024 (g/day)"))
-ADG_map
+production_df |> map_ADG()
 
 # Quick plot of French egg importations ---------------------------------
 library("slider")
