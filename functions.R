@@ -568,13 +568,15 @@ map_ADG <- function(production_df, year = NULL) {
     filter(
       year == !!year,
       animal == "broilers",
-      # country != "Iceland"  # Iceland outlier to be investigated
     ) |>
+    # Iceland's turnover rate is 25, which implies a lifespan of 2 weeks
+    # --> exclude outlier
+    mutate(ADG = if_else(country == "Iceland", NA, ADG)) |>
     inner_join(worldmap_df, by = "country") |>
     ggplot(aes(x = long, y = lat, group = group)) +
     coord_fixed(1.2) +
     geom_polygon(aes(fill = ADG)) +
-    scale_fill_binned(palette = "viridis", breaks = c(5, 15, 30, 60, 100)) +
+    scale_fill_binned(palette = "viridis", breaks = c(5, 10, 20, 30)) +
     theme_void() +
     labs(fill = glue("Average daily\nweight gain,\n2024 (g/day)"))
 
