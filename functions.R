@@ -541,6 +541,7 @@ map_net_exports <- function(
     "#BE4A47",
     "#7F312F"
   )
+  breaks = c(-0.5, 0, 1, 2, 3, 4)
 
   net_export_map <- net_export_df |>
     inner_join(worldmap_df, by = "country") |>
@@ -549,9 +550,11 @@ map_net_exports <- function(
     geom_polygon(aes(fill = net_export)) +
     scale_fill_stepsn(
       colours = palette,
-      breaks = c(-1, 0, 1, 2, 3, 4),
-      limits = c(-2, 5),
-      right = FALSE
+      breaks = breaks,
+      values = scales::rescale(breaks),
+      limits = c(NA, 5),
+      show.limits = TRUE,
+      labels = \(x) round(x, digits = 1)
     ) +
     theme_void() +
     labs(fill = glue("Net exports,\nchicken meat,\n{year} (Mt)"))
@@ -576,7 +579,12 @@ map_ADG <- function(production_df, year = NULL) {
     ggplot(aes(x = long, y = lat, group = group)) +
     coord_fixed(1.2) +
     geom_polygon(aes(fill = ADG)) +
-    scale_fill_binned(palette = "viridis", breaks = c(5, 10, 20, 30)) +
+    scale_fill_binned(
+      palette = "viridis",
+      breaks = c(5, 10, 20, 30),
+      show.limits = TRUE,
+      labels = \(x) round(x)
+    ) +
     theme_void() +
     labs(fill = glue("Average daily\nweight gain,\n2024 (g/day)"))
 
