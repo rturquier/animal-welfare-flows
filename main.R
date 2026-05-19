@@ -91,6 +91,13 @@ ggsave(
 
 # Map Average Daily weight Gain (ADG) -------------------------------------
 production_df |> map_ADG()
+ggsave(
+  "figures/ADG.svg",
+  width = 600,
+  height = 300,
+  scale = 3.5,
+  units = "px"
+)
 
 # Quick plot of French egg importations ---------------------------------
 library("slider")
