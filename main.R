@@ -15,13 +15,15 @@ conflicts_prefer(dplyr::select(), dplyr::filter())
 # Functions --------------------------------------------------------------
 source("functions.R")
 
+# FAOSTAT login ----------------------------------------------------------
+# Go to https://www.fao.org/faostat/en/#developer-portal to get credentials.
+faostat_login()
+
 # Download FAO data -------------------------------------------------------
 production_data_path <- "data/raw/production.rds"
 trade_data_path <- "data/raw/trade.rds"
 trade_matrix_path <- "data/raw/trade_matrix.rds"
 
-# Go to https://www.fao.org/faostat/en/#developer-portal to get FAO credentials.
-# You might need to run `faostat_login()` to connect.
 download_production_data(production_data_path)
 download_trade_data(trade_data_path)
 download_trade_matrix(trade_matrix_path)
