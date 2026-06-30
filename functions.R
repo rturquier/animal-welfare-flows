@@ -206,30 +206,44 @@ get_all_FAO_meat_items <- function(){
   #' it only has monetary values, not quantities. To get total quantities of
   #' meat, get a list of all items included in the aggregate, and sum their
   #' quantities.
-  all_meat_items <- read_fao(
-    area_codes = "5000",  # World
-    element_codes = "2920",  # Export value
-    item_codes = "1885>",  # Meat and Meat Preparations > (List)
-    year_codes = "2024",
-    dataset = "TCL"
-  ) |>
-    select(Item) |>
-    unique() |>
-    pull()
+  all_meat_items_txt <- "data/raw/all_FOA_meat_items.txt"
+  if (file.exists(all_meat_items_txt)) {
+    all_meat_items <- all_meat_items_txt |> readLines()
+  }
+  else {
+    all_meat_items <- read_fao(
+      area_codes = "5000",  # World
+      element_codes = "2920",  # Export value
+      item_codes = "1885>",  # Meat and Meat Preparations > (List)
+      year_codes = "2024",
+      dataset = "TCL"
+    ) |>
+      select(Item) |>
+      unique() |>
+      pull()
+    all_meat_items |> write(all_meat_items_txt)
+  }
   return(all_meat_items)
 }
 
 get_all_FAO_countries <- function(){
-  all_countries <- read_fao(
-    area_codes = "5000>",  # World > (List of countries in the "World" group)
-    element_codes = "2620",  # Import value
-    item_codes = "10",  # Total Merchandise Trade
-    year_codes = "2024",
-    dataset = "TCL"
-  ) |>
-    select(Area) |>
-    unique() |>
-    pull()
+  all_countries_txt <- "data/raw/all_FOA_countries.txt"
+  if (file.exists(all_countries_txt)) {
+    all_countries <- all_countries_txt |> readLines()
+  }
+  else {
+    all_countries <- read_fao(
+      area_codes = "5000>",  # World > (List of countries in the "World" group)
+      element_codes = "2620",  # Import value
+      item_codes = "10",  # Total Merchandise Trade
+      year_codes = "2024",
+      dataset = "TCL"
+    ) |>
+      select(Area) |>
+      unique() |>
+      pull()
+    all_countries |> write(all_countries_txt)
+  }
   return(all_countries)
 }
 
