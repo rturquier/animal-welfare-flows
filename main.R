@@ -83,20 +83,6 @@ save_fig("net_chicken_meat_exports.svg")
 production_df |> map_ADG()
 save_fig("ADG.svg")
 
-
-# WIP ---------------------------------------------------------------------
-adjusted_trade_df <- trade_matrix |>
-  left_join(trade_df) |>
-  left_join(production_df) |>
-  filter(
-    animal == "broilers",
-    unit == "kg",
-    item != "Chickens"  # just exclude live chickens for now
-  ) |>
-  group_by(country, year)
-
-
-
 # Quick plot of French egg importations ---------------------------------
 library("slider")
 
