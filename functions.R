@@ -312,6 +312,7 @@ prepare_trade_df <- function(raw_trade_df) {
     ) |>
     convert_FAO_units() |>
     adjust_meat_preparations() |>
+    create_animal_column() |>
     pivot_wider(
       names_from = element,
       values_from = quantity
