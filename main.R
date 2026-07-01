@@ -21,17 +21,17 @@ faostat_login()
 
 # Download FAO data -------------------------------------------------------
 production_data_path <- "data/raw/production.rds"
-trade_data_path <- "data/raw/trade.rds"
-trade_matrix_path <- "data/raw/trade_matrix.rds"
+FAO_trade_data_path <- "data/raw/trade.rds"
+FAO_trade_matrix_path <- "data/raw/FAO_trade_matrix.rds"
 
 download_production_data(production_data_path)
-download_trade_data(trade_data_path)
-download_trade_matrix(trade_matrix_path)
+download_FAO_trade_data(FAO_trade_data_path)
+download_FAO_trade_matrix(FAO_trade_matrix_path)
 
 # Read downloaded data ----------------------------------------------------
 raw_production_df <- read_rds(production_data_path)
-raw_trade_df <- read_rds(trade_data_path)
-raw_trade_matrix <- read_rds(trade_matrix_path)
+raw_FAO_trade_df <- read_rds(FAO_trade_data_path)
+raw_FAO_trade_matrix <- read_rds(FAO_trade_matrix_path)
 
 # Scope -------------------------------------------------------------------
 scope <- list(
@@ -67,16 +67,16 @@ production_df |>
   select(country, animal, year, slaughter_rate)
 
 # Wrangle trade data ------------------------------------------------------
-trade_df <- prepare_trade_df(raw_trade_df)
-trade_matrix <- prepare_trade_matrix(raw_trade_matrix)
-aggregated_trade_matrix <- aggregate_trade_matrix(trade_matrix)
+FAO_trade_df <- prepare_FAO_trade_df(raw_FAO_trade_df)
+FAO_trade_matrix <- prepare_FAO_trade_matrix(raw_FAO_trade_matrix)
+aggregated_FAO_trade_matrix <- aggregate_FAO_trade_matrix(FAO_trade_matrix)
 
 # Plot evolution of global meat flows -------------------------------------
-plot_global_meat_imports(trade_df)
+plot_global_meat_imports(FAO_trade_df)
 save_fig("global_meat_imports.svg")
 
 # Map net exports --------------------------------------------------------
-trade_df |> map_net_exports()
+FAO_trade_df |> map_net_exports()
 save_fig("net_chicken_meat_exports.svg")
 
 # Map Average Daily weight Gain (ADG) -------------------------------------
@@ -86,7 +86,7 @@ save_fig("ADG.svg")
 # Quick plot of French egg importations ---------------------------------
 library("slider")
 
-france_df <- trade_matrix |>
+france_df <- FAO_trade_matrix |>
   filter(
     country == "France",
     animal == "hens",

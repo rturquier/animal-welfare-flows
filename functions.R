@@ -15,14 +15,14 @@ download_production_data <- download_wrapper(function(file_path) {
   get_faostat_bulk("QCL") |> saveRDS(file_path)
 })
 
-download_trade_data <- download_wrapper(function(file_path) {
+download_FAO_trade_data <- download_wrapper(function(file_path) {
   TCL_url <- glue("https://bulks-faostat.fao.org/production/",
                   "Trade_CropsLivestock_E_All_Data_(Normalized).zip")
   # Using the URL because the normal API request was failing for some reason
   get_faostat_bulk_url(TCL_url) |> saveRDS(file_path)
 })
 
-download_trade_matrix <- download_wrapper(function(file_path) {
+download_FAO_trade_matrix <- download_wrapper(function(file_path) {
   # Select columns & filter rows for faster speed when reading file from disk
   get_faostat_bulk("TM")  |>
     select(
@@ -96,8 +96,8 @@ normalize_FAO_country_names <- function(country_names) {
   return(normalized_country_names)
 }
 
-merge_regions_to_their_country <- function(trade_matrix) {
-  country_level_df <- trade_matrix |>
+merge_regions_to_their_country <- function(FAO_trade_matrix) {
+  country_level_df <- FAO_trade_matrix |>
     mutate(
       across(
         c(country, partner),
@@ -293,10 +293,10 @@ prepare_production_df <- function(raw_production_df, scope) {
   return(production_df)
 }
 
-prepare_trade_df <- function(raw_trade_df) {
+prepare_FAO_trade_df <- function(raw_FAO_trade_df) {
   all_meat_items <- get_all_FAO_meat_items()
 
-  trade_df <- raw_trade_df |>
+  FAO_trade_df <- raw_FAO_trade_df |>
     filter(
       item %in% all_meat_items,
       element %in% c("import_quantity", "export_quantity")
@@ -322,12 +322,12 @@ prepare_trade_df <- function(raw_trade_df) {
       export = export_quantity
     ) |>
     mutate(net_export = export - import)
-  return(trade_df)
+  return(FAO_trade_df)
 }
 
 
-prepare_trade_matrix <- function(raw_trade_matrix){
-  trade_matrix <- raw_trade_matrix |>
+prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
+  FAO_trade_matrix <- raw_FAO_trade_matrix |>
     rename(
       country = reporter_countries,
       partner = partner_countries,
@@ -357,7 +357,7 @@ prepare_trade_matrix <- function(raw_trade_matrix){
     ) |>
     adjust_meat_preparations() |>
     convert_egg_weight_to_n_eggs()
-  return(trade_matrix)
+  return(FAO_trade_matrix)
 }
 
 consolidate_trade_flow <- function(self_reported, third_party_reported){
@@ -384,8 +384,8 @@ consolidate_trade_flow <- function(self_reported, third_party_reported){
   return(consolidated_value)
 }
 
-aggregate_trade_matrix <- function(trade_matrix){
-  third_party_aggregated_trade_matrix <- trade_matrix |>
+aggregate_FAO_trade_matrix <- function(FAO_trade_matrix){
+  third_party_aggregated_FAO_trade_matrix <- FAO_trade_matrix |>
     group_by(partner, year, element, animal, unit) |>
     summarise(quantity = sum(quantity), .groups = "drop") |>
     pivot_wider(
@@ -398,7 +398,7 @@ aggregate_trade_matrix <- function(trade_matrix){
      import = export_quantity
     )
 
-  self_reported_aggregated_trade_matrix <- trade_matrix |>
+  self_reported_aggregated_FAO_trade_matrix <- FAO_trade_matrix |>
     group_by(country, year, element, animal, unit) |>
     summarise(quantity = sum(quantity), .groups = "drop") |>
     pivot_wider(
@@ -407,10 +407,10 @@ aggregate_trade_matrix <- function(trade_matrix){
     ) |>
     rename(import = import_quantity, export = export_quantity)
 
-  aggregated_trade_matrix <-
+  aggregated_FAO_trade_matrix <-
     full_join(
-      self_reported_aggregated_trade_matrix,
-      third_party_aggregated_trade_matrix,
+      self_reported_aggregated_FAO_trade_matrix,
+      third_party_aggregated_FAO_trade_matrix,
       by = c("country", "year", "animal", "unit"),
       suffix = c("_self_reported", "_third_party")
     ) |>
@@ -419,7 +419,7 @@ aggregate_trade_matrix <- function(trade_matrix){
       export = consolidate_trade_flow(export_self_reported, export_third_party),
       net_export = export - import
     )
-  return(aggregated_trade_matrix)
+  return(aggregated_FAO_trade_matrix)
 }
 
 
@@ -473,8 +473,8 @@ save_fig <- function(file_name, width = 600, height = 300, scale = 3.5) {
   )
 }
 
-plot_global_meat_imports <- function(trade_df){
-  global_meat_df <- trade_df |>
+plot_global_meat_imports <- function(FAO_trade_df){
+  global_meat_df <- FAO_trade_df |>
     filter(country == "World") |>
     group_by(year) |>
     summarise(
@@ -532,16 +532,16 @@ plot_housing_shares <- function(hen_housing_df, country_name){
 }
 
 map_net_exports <- function(
-    trade_df,
+    FAO_trade_df,
     year = NULL,
     item = "Meat of chickens, fresh or chilled"
 ) {
-  if(year |> is.null()) {year = max(trade_df$year)}
+  if(year |> is.null()) {year = max(FAO_trade_df$year)}
 
   worldmap_df <- map_data("world") |>
     mutate(country = countryname(region, warn=FALSE))
 
-  net_export_df <- trade_df |>
+  net_export_df <- FAO_trade_df |>
     filter(country %in% get_all_FAO_countries()) |>
     mutate(country = countryname(country)) |>
     group_by(country) |>
