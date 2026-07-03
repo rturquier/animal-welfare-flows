@@ -7,6 +7,7 @@ library("countrycode")
 library("pdftools")
 library("maps")
 library("seas")
+library("archive")
 
 # Prevent MASS from masking common dplyr functions
 library("conflicted")
@@ -32,6 +33,9 @@ download_FAO_trade_matrix(FAO_trade_matrix_path)
 raw_production_df <- read_rds(production_data_path)
 raw_FAO_trade_df <- read_rds(FAO_trade_data_path)
 raw_FAO_trade_matrix <- read_rds(FAO_trade_matrix_path)
+
+# Download BACI data ------------------------------------------------------
+download_BACI_data("data/raw/BACI")
 
 # Scope -------------------------------------------------------------------
 scope <- list(

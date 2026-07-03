@@ -41,6 +41,16 @@ download_FAO_trade_matrix <- download_wrapper(function(file_path) {
     saveRDS(file_path)
 })
 
+download_BACI_data <- download_wrapper(
+  function(BACI_dir_path) {
+    BACI_url <-
+      "https://www.cepii.fr/DATA_DOWNLOAD/baci/data/BACI_HS92_V202601.zip"
+    # set max download time to 5 minutes (default is 60s) to avoid timeout
+    options(timeout = 5 * 60)
+    archive_extract(BACI_url, BACI_data_dir)
+  }
+)
+
 download_eurostat_pig_data <- download_wrapper(function(file_path) {
   get_eurostat("ef_ah_pigs") |> write_csv(file_path)
 })
