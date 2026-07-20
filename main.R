@@ -37,64 +37,9 @@ raw_production_df <- read_rds(production_data_path)
 raw_FAO_trade_df <- read_rds(FAO_trade_data_path)
 raw_FAO_trade_matrix <- read_rds(FAO_trade_matrix_path)
 
-# Download BACI data ------------------------------------------------------
-download_BACI_data("data/raw/BACI")
-
-# Prepare BACI data -------------------------------------------------------
-BACI_file_paths <- glue(
-  "data/raw/BACI/BACI_HS92_Y{1995:2024}_V202601.csv"
-)
-
-con <- dbConnect(duckdb())
-dbExecute(con, "SET temp_directory='/tmp'")
-
-duckdb_read_csv(con, "BACI_raw_files", files = BACI_file_paths)
-duckdb_read_csv(con,
-  "BACI_country_codes",
-  files = "data/raw/BACI/country_codes_V202601.csv"
-)
-# Read product codes csv with readr to circumvent a duckdb import type error
-read_csv("data/raw/BACI/product_codes_HS92_V202601.csv") |>
-  filter(str_detect(code, "^[0-9]{6}$")) |>
-  mutate(k = as.numeric(code), product_name = description, .keep = "none") |>
-  copy_to(con, df = _, name = "BACI_product_codes", overwrite = TRUE)
-
-country_codes <- tbl(con, "BACI_country_codes")
-product_codes <- tbl(con, "BACI_product_codes")
-
-exporter_codes <- country_codes |>
-  select(
-    i = country_code,
-    exporter_iso3 = country_iso3
-  )
-importer_codes <- country_codes |>
-  select(
-    j = country_code,
-    importer_iso3 = country_iso3
-  )
-
-BACI_df <- tbl(con, "BACI_raw_files") |>
-  filter(!is.na(i), !is.na(j)) |>
-  left_join(exporter_codes, by = "i") |>
-  left_join(importer_codes, by = "j") |>
-  left_join(product_codes, by = "k") |>
-  select(-i, -j) |>
-  rename(
-    year = t,
-    product_code = k,
-    value = v,
-    quantity = q
-  ) |>
-  filter(
-    product_code |> between(010000, 019999) |  # live animals
-    product_code |> between(020000, 029999) |  # meat
-    product_code |> between(040000, 040899)    # dairy and eggs
-  ) |>
-  mutate(
-    value = value * 1000,       # convert thousand USD to USD
-    quantity = quantity * 1000  # convert tons to kilograms
-  )
-
+# Download and prepare BACI data ------------------------------------------
+download_and_prepare_BACI_data("data/raw/BACI.rds")
+BACI_df <- read_rds("data/raw/BACI.rds")
 
 # Scope -------------------------------------------------------------------
 scope <- list(
