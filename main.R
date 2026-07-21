@@ -98,13 +98,16 @@ france_df <- FAO_trade_matrix |>
   filter(
     country == "France",
     animal == "hens",
-    element == "import"
+    element == "import_quantity"
   ) |>
   ungroup() |>
-  group_by(year, item) |>
+  group_by(year) |>
   summarise(quantity = sum(quantity), unit = unique(unit)) |>
   ungroup() |>
-  left_join(filter(production_df, animal == "hens", area == "France"), join_by(year == year)) |>
+  left_join(
+    filter(production_df, animal == "hens", country == "France"),
+    join_by(year == year)
+  ) |>
   mutate(
     kg_per_egg = production_kg / n_eggs,
     kg_per_egg_roll_mean = slide(kg_per_egg, mean, .before = 10) |> as.double(),
