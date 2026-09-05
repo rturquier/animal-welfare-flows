@@ -449,19 +449,14 @@ consolidate_trade_flow <- function(self_reported, third_party_reported){
   #' import or export, and returns a single value.
   #'
   #' The current approach is to:
-  #' - select a non-missing value if possible,
-  #' - select a non-null value if possible,
-  #' - if two non-missing and non-null values are available, return the third-
-  #'   party-reported one.
-  #' The idea is that the overestimation of trade flows is less likely with a
-  #' multitude of reporter countries than with a single reporter country.
-  consolidated_value <- case_when(
-    self_reported |> is.na() & third_party_reported |> is.na() ~ NA,
-    self_reported |> is.na() ~ third_party_reported,
-    third_party_reported |> is.na() ~ self_reported,
-    self_reported == 0 ~ third_party_reported,
-    third_party_reported == 0 ~ self_reported,
-    .default = third_party_reported
+  #' - if both values are missing, return a missing,
+  #' - if only one value is available, take it,
+  #' - if two values are available, conservatively take the minimum,
+  #'   following @burkholz2019.
+  consolidated_value <- if_else(
+    self_reported |> is.na() | third_party_reported |> is.na(),
+    coalesce(self_reported, third_party_reported),
+    pmin(self_reported, third_party_reported)
   )
   return(consolidated_value)
 }
