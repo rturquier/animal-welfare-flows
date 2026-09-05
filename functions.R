@@ -407,6 +407,45 @@ prepare_FAO_trade_df <- function(raw_FAO_trade_df) {
   return(FAO_trade_df)
 }
 
+reconcile_by_minimum <- function(self_reported, third_party_reported){
+  #' Consolidate an import or export into a single value
+  #'
+  #' This function takes a self-reported and third-party-reported value for an
+  #' import or export, and returns a single value:
+  #' - if both values are missing, return a missing,
+  #' - if only one value is available, take it,
+  #' - if two values are available, conservatively take the minimum,
+  #'   following @burkholz2019.
+  reconciled_value <- if_else(
+    self_reported |> is.na() | third_party_reported |> is.na(),
+    coalesce(self_reported, third_party_reported),
+    pmin(self_reported, third_party_reported)
+  )
+  return(reconciled_value)
+}
+
+reconcile_mirror_discrepencies <- function(FAO_trade_matrix){
+  #' Present all trade flows as imports and reconcile mirror statistics
+  self_reported_imports <- FAO_trade_matrix |>
+    filter(element == "import_quantity") |>
+    rename(imports_self_reported = quantity) |>
+    select(-element)
+
+  imports_as_reported_by_partner <- FAO_trade_matrix |>
+    filter(element == "export_quantity") |>
+    rename(partner = country, country = partner) |>  # swap country and partner
+    rename(imports_third_party_reported = quantity) |>
+    select(-element)
+
+  reconciled_FAO_trade_matrix <-
+    full_join(self_reported_imports, imports_as_reported_by_partner) |>
+    mutate(imports = consolidate_trade_flow(imports_self_reported,
+                                            imports_third_party_reported)) |>
+    relocate(imports_self_reported, imports_third_party_reported, imports,
+             .before = unit)
+
+  return(reconciled_FAO_trade_matrix)
+}
 
 prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
   FAO_trade_matrix <- raw_FAO_trade_matrix |>
@@ -438,67 +477,10 @@ prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
       )
     ) |>
     adjust_meat_preparations() |>
-    convert_egg_weight_to_n_eggs()
+    convert_egg_weight_to_n_eggs() |>
+    reconcile_mirror_discrepencies()
   return(FAO_trade_matrix)
 }
-
-consolidate_trade_flow <- function(self_reported, third_party_reported){
-  #' Consolidate an import or export into a single value
-  #'
-  #' This function takes a self-reported and third-party-reported value for an
-  #' import or export, and returns a single value.
-  #'
-  #' The current approach is to:
-  #' - if both values are missing, return a missing,
-  #' - if only one value is available, take it,
-  #' - if two values are available, conservatively take the minimum,
-  #'   following @burkholz2019.
-  consolidated_value <- if_else(
-    self_reported |> is.na() | third_party_reported |> is.na(),
-    coalesce(self_reported, third_party_reported),
-    pmin(self_reported, third_party_reported)
-  )
-  return(consolidated_value)
-}
-
-aggregate_FAO_trade_matrix <- function(FAO_trade_matrix){
-  third_party_aggregated_FAO_trade_matrix <- FAO_trade_matrix |>
-    group_by(partner, year, element, animal, unit) |>
-    summarise(quantity = sum(quantity), .groups = "drop") |>
-    pivot_wider(
-      names_from = element,
-      values_from = quantity
-    ) |>
-    rename(
-     country = partner,
-     export = import_quantity,
-     import = export_quantity
-    )
-
-  self_reported_aggregated_FAO_trade_matrix <- FAO_trade_matrix |>
-    group_by(country, year, element, animal, unit) |>
-    summarise(quantity = sum(quantity), .groups = "drop") |>
-    pivot_wider(
-      names_from = element,
-      values_from = quantity
-    ) |>
-    rename(import = import_quantity, export = export_quantity)
-
-  aggregated_FAO_trade_matrix <-
-    full_join(
-      self_reported_aggregated_FAO_trade_matrix,
-      third_party_aggregated_FAO_trade_matrix,
-      by = c("country", "year", "animal", "unit"),
-      suffix = c("_self_reported", "_third_party")
-    ) |>
-    mutate(
-      import = consolidate_trade_flow(import_self_reported, import_third_party),
-      export = consolidate_trade_flow(export_self_reported, export_third_party),
-      net_export = export - import
-    )
-  return(aggregated_FAO_trade_matrix)
-}
-
 
 extract_ciwf_cage_data <- function() {
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"

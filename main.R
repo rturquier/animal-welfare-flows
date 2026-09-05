@@ -77,7 +77,6 @@ production_df |>
 # Wrangle trade data ------------------------------------------------------
 FAO_trade_df <- prepare_FAO_trade_df(raw_FAO_trade_df)
 FAO_trade_matrix <- prepare_FAO_trade_matrix(raw_FAO_trade_matrix)
-aggregated_FAO_trade_matrix <- aggregate_FAO_trade_matrix(FAO_trade_matrix)
 
 # Plot evolution of global meat flows -------------------------------------
 plot_global_meat_imports(FAO_trade_df)
