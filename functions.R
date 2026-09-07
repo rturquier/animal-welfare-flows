@@ -437,21 +437,38 @@ reconcile_mirror_discrepencies <- function(FAO_trade_matrix){
     rename(imports_third_party_reported = quantity) |>
     select(-element)
 
-  reconciled_FAO_trade_matrix <-
+  reconciled_imports <-
     full_join(
       self_reported_imports,
       imports_as_reported_by_partner,
       by = c("country", "partner", "year", "animal", "item", "unit"),
-      suffix = c(".self_reported", ".third_party_reported"),
+      suffix = c(".self_reported_imports", ".third_party_reported_imports"),
       relationship = "one-to-one"
     ) |>
     mutate(imports = consolidate_trade_flow(imports_self_reported,
-                                            imports_third_party_reported)) |>
-    relocate(imports_self_reported, imports_third_party_reported, imports,
-             .before = unit)
+                                            imports_third_party_reported))
+  return(reconciled_imports)
+}
+
+make_trade_matrix_symmetric <- function(reconciled_imports){
+  #' Add an exports column to the imports-only reconciled trade matrix
+  reconciled_exports <- reconciled_imports |>
+    select(
+      country = partner,
+      partner = country,
+      year,
+      item,
+      exports = imports,
+      unit
+    )
+
+  reconciled_FAO_trade_matrix <- reconciled_imports |>
+    full_join(reconciled_exports, relationship = "one-to-one") |>
+    mutate(across(c("imports", "exports"), ~ replace_na(.x, 0)))
 
   return(reconciled_FAO_trade_matrix)
 }
+
 
 prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
   FAO_trade_matrix <- raw_FAO_trade_matrix |>
@@ -484,7 +501,8 @@ prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
     ) |>
     adjust_meat_preparations() |>
     convert_egg_weight_to_n_eggs() |>
-    reconcile_mirror_discrepencies()
+    reconcile_mirror_discrepencies() |>
+    make_trade_matrix_symmetric()
   return(FAO_trade_matrix)
 }
 
