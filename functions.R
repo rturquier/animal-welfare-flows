@@ -502,7 +502,8 @@ prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
     adjust_meat_preparations() |>
     convert_egg_weight_to_n_eggs() |>
     reconcile_mirror_discrepencies() |>
-    make_trade_matrix_symmetric()
+    make_trade_matrix_symmetric() |>
+    relocate(imports, exports, .before = unit)
   return(FAO_trade_matrix)
 }
 
