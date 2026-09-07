@@ -438,7 +438,13 @@ reconcile_mirror_discrepencies <- function(FAO_trade_matrix){
     select(-element)
 
   reconciled_FAO_trade_matrix <-
-    full_join(self_reported_imports, imports_as_reported_by_partner) |>
+    full_join(
+      self_reported_imports,
+      imports_as_reported_by_partner,
+      by = c("country", "partner", "year", "animal", "item", "unit"),
+      suffix = c(".self_reported", ".third_party_reported"),
+      relationship = "one-to-one"
+    ) |>
     mutate(imports = consolidate_trade_flow(imports_self_reported,
                                             imports_third_party_reported)) |>
     relocate(imports_self_reported, imports_third_party_reported, imports,
