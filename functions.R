@@ -345,11 +345,15 @@ create_animal_column <- function(df) {
 interpolate_and_extend_missings <- function(production_df){
   #' Interpolate and extend missing values
   #'
+  #' * Missing years are added,
   #' * NAs before and after the first or last non-missing value are replaced
-  #'   with the first or last available value.
+  #'   with the first or last available value,
   #' * NAs between two non-missing values are interpolated linearly.
+  year_range <- min(production_df$year):max(production_df$year)
+
   interpolated_production_df <- production_df |>
     group_by(country, animal) |>
+    complete(year = year_range) |>
     mutate(across(
       c("n_animals", "production_kg", "n_eggs", "n_slaughtered"),
       ~ na.fill(.x, "extend")
