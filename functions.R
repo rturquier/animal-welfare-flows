@@ -345,6 +345,27 @@ create_animal_column <- function(df) {
   return(df_with_animal_column)
 }
 
+fix_suspicious_zeros <- function(production_df){
+  #' Impute values for cells with suspicious null values
+  #'
+  #' A few countries report abnormal null values for some production variables.
+  #' Ideally, these should be replaced and imputed with some kind of regression.
+  #' For now, I just replace suspicious zeros for broilers in Luxembourg with
+  #' NAs (2018 - 2024). These missing values will be replaced with the latest
+  #' available value (2017) by the `interpolate_and_extend_missings` function.
+  less_suspicious_production_df <- production_df |>
+    mutate(across(
+      c("production_kg", "n_slaughtered"),
+      ~ if_else(
+        animal == "broilers" & country == "Luxembourg"
+        & n_animals > 10^4 & .x == 0,
+        NA,
+        .x
+      )
+    ))
+  return(less_suspicious_production_df)
+}
+
 interpolate_and_extend_missings <- function(production_df){
   #' Interpolate and extend missing values
   #'
@@ -388,6 +409,7 @@ prepare_production_df <- function(raw_production_df, scope) {
       values_from = quantity
     ) |>
     arrange(country, year) |>
+    fix_suspicious_zeros() |>
     interpolate_and_extend_missings() |>
     mutate(
       country = normalize_FAO_country_names(country),
