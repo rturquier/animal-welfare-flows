@@ -165,8 +165,11 @@ normalize_FAO_country_names <- function(country_names) {
     "China, mainland" = "China",
     # Prevent `countrycode` function matching "Australia and New Zealand" as
     # "Australia" or "New Zealand" (which would cause unwanted `NA`s)
-    "Australia and New Zealand" = "Australia and New Zealand"
-
+    "Australia and New Zealand" = "Australia and New Zealand",
+    # Keep former countries as is
+    "Ethiopia PDR" = "Ethiopia PDR",
+    "Sudan (former)" = "Sudan (former)",
+    "USSR" = "USSR"
   )
   normalized_country_names <- countrycode(
     country_names,
@@ -387,6 +390,7 @@ prepare_production_df <- function(raw_production_df, scope) {
     arrange(country, year) |>
     interpolate_and_extend_missings() |>
     mutate(
+      country = normalize_FAO_country_names(country),
       slaughter_rate = n_slaughtered / n_animals,
       weight_per_animal = production_kg / n_slaughtered,
       lifespan = (1 / slaughter_rate) * seas::year.length(year),  # days
@@ -713,7 +717,7 @@ map_ADG <- function(production_df, year = NULL) {
       labels = \(x) round(x)
     ) +
     theme_void() +
-    labs(fill = glue("Average daily\nweight gain,\n2024 (g/day)"))
+    labs(fill = glue("Average daily\nweight gain,\n{year} (g/day)"))
 
   return(ADG_map)
 }
