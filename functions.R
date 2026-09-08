@@ -515,7 +515,6 @@ make_trade_matrix_symmetric <- function(reconciled_imports){
   return(reconciled_FAO_trade_matrix)
 }
 
-
 prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
   FAO_trade_matrix <- raw_FAO_trade_matrix |>
     rename(
@@ -551,6 +550,51 @@ prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
     make_trade_matrix_symmetric() |>
     relocate(imports, exports, .before = unit)
   return(FAO_trade_matrix)
+}
+
+adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
+  broiler_production_df <- production_df |>
+    filter(animal == "broilers") |>
+    select(-animal, -n_eggs)
+
+  adjusted_ADG_df <- FAO_trade_matrix |>
+    filter(item == "Meat of chickens, fresh or chilled") |>
+    select(-c(item)) |>
+    inner_join(
+      broiler_production_df,
+      by = c("country", "year"),
+      relationship = "many-to-one"
+    ) |>
+    inner_join(
+      broiler_production_df,
+      by = c("partner" = "country", "year"),
+      suffix = c(".country", ".partner"),
+      relationship = "many-to-one"
+    ) |>
+    rename(
+      imports_kg = imports,
+      exports_kg = exports,
+    ) |>
+    mutate(
+      imports_n_animals = imports_kg / weight_per_animal.partner,
+      exports_n_animals = exports_kg / weight_per_animal.country,
+    ) |>
+    group_by(country, year) |>
+    summarise(
+      n_slaughtered = unique(n_slaughtered.country),
+      n_imported = sum(imports_n_animals),
+      n_exported = sum(exports_n_animals),
+      n_consumed = n_slaughtered + n_imported - n_exported,
+      adjusted_ADG = (
+        (n_slaughtered - n_exported) * unique(ADG.country)
+        + sum(imports_n_animals * ADG.partner)
+      ) / n_consumed,
+      ADG = unique(ADG.country)
+    ) |>
+    mutate(
+      ADG_trade_difference = adjusted_ADG - ADG
+    )
+  return(adjusted_ADG_df)
 }
 
 extract_ciwf_cage_data <- function() {

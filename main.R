@@ -92,39 +92,7 @@ production_df |> map_ADG(year = 2024)
 save_fig("ADG.svg")
 
 # Adjust ADG for trade flows ----------------------------------------------
-broiler_production_df <- production_df |>
-  filter(animal == "broilers") |>
-  select(-animal, -n_eggs)
-
-adjusted_ADG_df <- FAO_trade_matrix |>
-  filter(item == "Meat of chickens, fresh or chilled") |>
-  select(-c(item)) |>
-  inner_join(
-    broiler_production_df,
-    by = c("country", "year"),
-    relationship = "many-to-one"
-  ) |>
-  inner_join(
-    broiler_production_df,
-    by = c("partner" = "country", "year"),
-    suffix = c(".country", ".partner")
-  ) |>
-  rename(
-    imports_kg = imports,
-    exports_kg = exports,
-  ) |>
-  mutate(
-    imports_n_animals = imports_kg / weight_per_animal.partner,
-    exports_n_animals = exports_kg / weight_per_animal.country,
-  ) |>
-  group_by(country, year) |>
-  summarise(
-    # number of animals killed for consumption
-    #   = number of animals killed in country + imports - exports
-    consumption_n_animals = unique(n_slaughtered.country)
-                            + sum(imports_n_animals)
-                            - sum(exports_n_animals)
-  )
+adjusted_ADG_df <- adjust_ADG_for_trade_flows(production_df, FAO_trade_matrix)
 
 # Quick plot of French egg importations ---------------------------------
 library("slider")
