@@ -334,13 +334,28 @@ create_animal_column <- function(df) {
     animal = case_when(
       item |> str_detect("[Ee]gg") ~ "hens",
       item |> str_detect("[Cc]hicken") ~ "broilers",
-      # Assume that poultry meat preparations are all made with chicken
-      item == "Poultry meat preparations" ~ "broilers",
+      item == "Poultry meat preparations" ~ "poultry",
       item |> str_detect("[Pp]ig") ~ "pigs",
       .default = "other"
     )
   )
   return(df_with_animal_column)
+}
+
+interpolate_and_extend_missings <- function(production_df){
+  #' Interpolate and extend missing values
+  #'
+  #' * NAs before and after the first or last non-missing value are replaced
+  #'   with the first or last available value.
+  #' * NAs between two non-missing values are interpolated linearly.
+  interpolated_production_df <- production_df |>
+    group_by(country, animal) |>
+    mutate(across(
+      c("n_animals", "production_kg", "n_eggs", "n_slaughtered"),
+      ~ na.fill(.x, "extend")
+    )) |>
+    ungroup()
+  return(interpolated_production_df)
 }
 
 prepare_production_df <- function(raw_production_df, scope) {
@@ -366,6 +381,7 @@ prepare_production_df <- function(raw_production_df, scope) {
       values_from = quantity
     ) |>
     arrange(country, year) |>
+    interpolate_and_extend_missings() |>
     mutate(
       slaughter_rate = n_slaughtered / n_animals,
       weight_per_animal = production_kg / n_slaughtered,

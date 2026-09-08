@@ -1,19 +1,20 @@
 # Libraries ---------------------------------------------------------------
-library("tidyverse")
-library("glue")
-library("FAOSTAT")
-library("readxl")
-library("countrycode")
-library("pdftools")
-library("maps")
-library("seas")
-library("archive")
+library(tidyverse)
+library(glue)
+library(FAOSTAT)
+library(readxl)
+library(countrycode)
+library(pdftools)
+library(maps)
+library(seas)
+library(archive)
+library(zoo)
 
-library("duckdb")
-library("dbplyr")
+library(duckdb)
+library(dbplyr)
 
 # Prevent MASS from masking common dplyr functions
-library("conflicted")
+library(conflicted)
 conflicts_prefer(dplyr::select(), dplyr::filter())
 
 # Functions --------------------------------------------------------------
