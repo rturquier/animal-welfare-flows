@@ -585,6 +585,7 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
       n_imported = sum(imports_n_animals),
       n_exported = sum(exports_n_animals),
       n_consumed = n_slaughtered + n_imported - n_exported,
+      partner_ADG = sum(imports_n_animals * ADG.partner) / n_imported,
       adjusted_ADG = (
         (n_slaughtered - n_exported) * unique(ADG.country)
         + sum(imports_n_animals * ADG.partner)
@@ -592,7 +593,8 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
       ADG = unique(ADG.country)
     ) |>
     mutate(
-      ADG_trade_difference = adjusted_ADG - ADG
+      ADG_trade_difference = adjusted_ADG - ADG,
+      share_of_imports_in_consumption = n_imported / n_consumed
     )
   return(adjusted_ADG_df)
 }
