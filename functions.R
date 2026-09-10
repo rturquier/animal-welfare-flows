@@ -1,3 +1,13 @@
+# Global variables --------------------------------------------------------
+EU_27 <- c(
+  "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark",
+  "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland",
+  "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands",
+  "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden"
+)
+
+
+# Downloads ---------------------------------------------------------------
 download_wrapper <- function(.download){
   force(.download)  # force evaluation to prevent lazy-eval quirks
   function(file_path) {
@@ -145,6 +155,8 @@ please_download_CIWF_report <- function(pdf_path){
   }
 }
 
+
+# Wrangling ---------------------------------------------------------------
 complete_with_dashboard_data <- function(hen_housing_df){
   #' Add data copied from individual dashboard PDFs
   #'
@@ -725,6 +737,8 @@ extract_ciwf_cage_data <- function() {
   return(ciwf_cage_df)
 }
 
+
+# Plots -------------------------------------------------------------------
 save_fig <- function(file_name, width = 600, height = 300, scale = 3.5) {
   ggsave(
     glue("figures/{file_name}"),
@@ -791,6 +805,30 @@ plot_housing_shares <- function(hen_housing_df, country_name){
     theme_minimal()
 
   return(housing_shares_plot)
+}
+
+map_hen_housing <- function(hen_housing_df, year = NULL){
+  if(year |> is.null()) {year = max(production_df$year)}
+
+  worldmap_df <- map_data("world") |>
+    mutate(country = countryname(region, warn=FALSE))
+
+  hen_housing_map <- hen_housing_df |>
+    filter(year == !!year) |>
+    inner_join(worldmap_df, by = "country") |>
+    ggplot(aes(x = long, y = lat, group = group)) +
+    coord_fixed(1.2) +
+    geom_polygon(aes(fill = share_enriched, color = "#222")) +
+    scale_fill_binned(
+      palette = "Oranges",
+      breaks = 1:8/10,
+      show.limits = TRUE,
+      # labels = \(x) glue(round(x * 100), " %")
+    ) +
+    theme_void() +
+    labs(fill = glue("Share of hens in cages in {year}"))
+  ggplot()
+  return(hen_housing_map)
 }
 
 map_net_exports <- function(

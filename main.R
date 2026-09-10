@@ -134,6 +134,9 @@ hen_housing_df <- prepare_hen_housing_df(hen_housing_path)
 # Plot shares in a given country ----------------------------------------------
 hen_housing_df |> plot_housing_shares("Belgium")
 
+# Map housing shares in a given year --------------------------------------
+map_hen_housing(hen_housing_df, year=2010)
+
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()
 
