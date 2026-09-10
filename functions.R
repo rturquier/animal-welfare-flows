@@ -11,6 +11,15 @@ download_wrapper <- function(.download){
   }
 }
 
+download_hen_housing_data <- download_wrapper(function(file_path){
+  #' Downloaded on 2026-09-10 from:
+  #' https://agriculture.ec.europa.eu/farming/animal-products/eggs_en
+  download.file(
+    "https://agriculture.ec.europa.eu/document/download/3611ba2e-ad9f-4b39-83db-00be67dc4022_en?filename=laying-hens-by-way-of-keeping-2011-2025_en.xlsx",
+    file_path
+  )
+})
+
 download_production_data <- download_wrapper(function(file_path) {
   get_faostat_bulk("QCL") |> saveRDS(file_path)
 })
@@ -134,6 +143,83 @@ please_download_CIWF_report <- function(pdf_path){
   if (!file.exists(pdf_path)) {
     stop(glue("PDF not found at {pdf_path}. Download manually from: {pdf_url}"))
   }
+}
+
+complete_with_dashboard_data <- function(hen_housing_df){
+  #' Add data copied from individual dashboard PDFs
+  #'
+  #' At time of coding, this function only adds one row (France, 2024).
+  egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>
+    mutate(country = countrycode(country, "eurostat", "country.name.en")) |>
+    mutate(across(starts_with("percentage"),
+                  ~ . / 100,
+                  .names = "{str_replace(.col, 'percentage', 'share')}"),
+           .keep = "unused") |>
+    mutate(across(
+      matches("share_(enriched|barn|free_range|organic)"),
+      ~ round(. * n_laying_hens),
+      .names = "{str_replace(.col, 'share', 'n')}"
+    ))
+
+  missing_rows <- egg_dashboard_df |>
+    anti_join(hen_housing_df, by = c("country", "year"))
+
+  NA_rows <- hen_housing_df |>
+    filter(
+      if_any(-c("country", "year", "n_battery", "share_battery"),
+             ~is.na(.))
+    ) |>
+    semi_join(x=egg_dashboard_df, y=_, by=c("country", "year"))
+
+  hen_housing_df_with_dashboard_data <- hen_housing_df |>
+    anti_join(NA_rows, by=c("country", "year")) |>
+    bind_rows(missing_rows, NA_rows)
+  return(hen_housing_df_with_dashboard_data)
+}
+
+prepare_hen_housing_df <- function(hen_housing_path){
+  hen_housing_numbers <- read_excel(
+    hen_housing_path,
+    range = "A4:H408",
+    col_names = c("country", "year", "n_battery", "n_enriched", "n_free_range",
+                  "n_barn", "n_organic", "n_laying_hens")
+  )
+  hen_housing_shares <- read_excel(
+    hen_housing_path,
+    range = "L4:P408",
+    col_names = c("share_battery", "share_enriched", "share_free_range",
+                  "share_barn", "share_organic")
+  )
+
+  hen_housing_df <- hen_housing_numbers |>
+    bind_cols(hen_housing_shares) |>
+    fill(country) |>
+    mutate(country = countryname(country)) |>
+    complete_with_dashboard_data() |>
+    distinct(country, year, .keep_all = TRUE) |>
+    arrange(country, year) |>
+    relocate(n_free_range, .after = n_barn) |>
+    relocate(share_free_range, .after = share_barn) |>
+    mutate(across(matches("year|n_.+"), as.integer)) |>
+    fix_Belgium_and_Poland_2014()
+  return(hen_housing_df)
+}
+
+fix_Belgium_and_Poland_2014 <- function(hen_housing_df){
+  #' Replace Belgium and Poland 2014 with NAs
+  #'
+  #' For Belgium and Poland, 2014 is nearly identical to 2013, but with `barn`
+  #' and `free_range` swapped. This is very probably a mistake.
+  be_2014_row <- which(hen_housing_df$country == "Belgium"
+                       & hen_housing_df$year == 2014)
+  pl_2014_row <- which(hen_housing_df$country == "Poland"
+                       & hen_housing_df$year == 2014)
+  all_columns_except_country_and_year <- hen_housing_df |>
+    colnames() |>
+    tail(-2)
+  hen_housing_df[be_2014_row, all_columns_except_country_and_year] <- NA
+  hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
+  return(hen_housing_df)
 }
 
 convert_FAO_units <- function(FAO_df){

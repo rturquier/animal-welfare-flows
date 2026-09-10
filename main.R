@@ -127,66 +127,9 @@ france_df <- FAO_trade_matrix |>
 france_df |> ggplot(aes(x = year, y = imported_share)) + geom_line()
 
 # Prepare EU laying hens housing system data ------------------------------
-egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>
-  mutate(country = countrycode(country, "eurostat", "country.name.en")) |>
-  mutate(across(starts_with("percentage"),
-                ~ . / 100,
-                .names = "{str_replace(.col, 'percentage', 'share')}"),
-        .keep = "unused") |>
-  mutate(across(
-    matches("share_(enriched|barn|free_range|organic)"),
-    ~ round(. * n_laying_hens),
-    .names = "{str_replace(.col, 'share', 'n')}"
-  ))
-
-
-hen_housing_2011_2021_numbers <- read_excel(
-  "data/raw/laying-hens-keeping-2011-2020_en.xlsx",
-  range = "A4:H300",
-  col_names = c(
-    "country",
-    "year",
-    "n_battery",
-    "n_enriched",
-    "n_free_range",
-    "n_barn",
-    "n_organic",
-    "n_laying_hens"
-  )
-)
-hen_housing_2011_2021_shares <- read_excel(
-  "data/raw/laying-hens-keeping-2011-2020_en.xlsx",
-  range = "L4:P300",
-  col_names = c(
-    "share_battery",
-    "share_enriched",
-    "share_free_range",
-    "share_barn",
-    "share_organic"
-  )
-)
-
-hen_housing_df <- hen_housing_2011_2021_numbers |>
-  bind_cols(hen_housing_2011_2021_shares) |>
-  fill(country) |>
-  mutate(country = countryname(country)) |>
-  bind_rows(egg_dashboard_df) |>
-  distinct(country, year, .keep_all = TRUE) |>
-  arrange(country, year) |>
-  relocate(n_free_range, .after = n_barn) |>
-  relocate(share_free_range, .after = share_barn) |>
-  mutate(across(matches("year|n_.+"), as.integer))
-
-# Replace Belgium and Poland 2014 with NAs ----
-# For Belgium and Poland, 2014 is nearly identical to 2013, but with `barn` and
-# `free_range` swapped. This is probably the result of a human mistake.
-be_2014_row <- which(hen_housing_df$country == "Belgium"
-                     & hen_housing_df$year == 2014)
-pl_2014_row <- which(hen_housing_df$country == "Poland"
-                     & hen_housing_df$year == 2014)
-all_columns_except_country_and_year <- hen_housing_df |> colnames() |> tail(-2)
-hen_housing_df[be_2014_row, all_columns_except_country_and_year] <- NA
-hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
+hen_housing_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
+download_hen_housing_data(hen_housing_path)
+hen_housing_df <- prepare_hen_housing_df(hen_housing_path)
 
 # Plot shares in a given country ----------------------------------------------
 hen_housing_df |> plot_housing_shares("Belgium")
