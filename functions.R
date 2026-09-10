@@ -789,3 +789,32 @@ map_ADG <- function(production_df, year = NULL) {
 
   return(ADG_map)
 }
+
+plot_adjusted_ADG <- function(adjusted_ADG_df, year=NULL){
+  if(year |> is.null()) {year = max(production_df$year)}
+
+  adjusted_ADG_df |>
+    filter(year == !!year, country != "Iceland") |>
+    arrange(desc(adjusted_ADG)) |>
+    ggplot() +
+    geom_segment(
+      aes(x = ADG, xend = adjusted_ADG, y =  reorder(country, adjusted_ADG)),
+      color = "#222", linewidth = 0.6
+    ) +
+    geom_point(aes(x = ADG, y = country, color = "ADG"), shape = 19) +
+    geom_point(
+      aes(x = adjusted_ADG, y = country, color = "adjusted_ADG"),
+      shape = 17
+    ) +
+    scale_color_manual(
+      name = NULL,
+      values = c("ADG" = "#FFCC22", "adjusted_ADG" = "#EE9922")
+    ) +
+    labs(
+      x = glue("ADG in {year} (g / day)"),
+      y = NULL,
+      title = NULL
+    ) +
+    theme_minimal() +
+    theme(legend.position = "top")
+}

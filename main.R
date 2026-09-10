@@ -94,6 +94,10 @@ save_fig("ADG.svg")
 # Adjust ADG for trade flows ----------------------------------------------
 adjusted_ADG_df <- adjust_ADG_for_trade_flows(production_df, FAO_trade_matrix)
 
+# Plot the difference -----------------------------------------------------
+adjusted_ADG_df |> plot_adjusted_ADG(year = 2023)
+save_fig("adjusted_ADG_2023.png", height = 2000)
+
 # Quick plot of French egg importations ---------------------------------
 library("slider")
 
