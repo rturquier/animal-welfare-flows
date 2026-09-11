@@ -132,10 +132,58 @@ download_hen_housing_data(hen_housing_path)
 hen_housing_df <- prepare_hen_housing_df(hen_housing_path)
 
 # Plot shares in a given country ----------------------------------------------
-hen_housing_df |> plot_housing_shares("Belgium")
+hen_housing_df |> plot_housing_shares("France")
 
 # Map housing shares in a given year --------------------------------------
-map_hen_housing(hen_housing_df, year=2010)
+map_hen_housing(hen_housing_df, year=2024)
+
+# Compare imports and share of cages --------------------------------------
+egg_production_df <- production_df |>
+  filter(animal == "hens") |>
+  select(country, year, n_eggs)
+
+EU_egg_trade_df <- FAO_trade_matrix |>
+  filter(
+    item |> str_detect("(E|e)ggs"),
+    country %in% EU_27
+  ) |>
+  group_by(country, year, item) |>
+  summarise(
+    imports = sum(imports),
+    exports = sum(exports),
+    unit = unique(unit)
+  ) |>
+  ungroup() |>
+  left_join(hen_housing_df, by = c("country", "year")) |>
+  left_join(egg_production_df, by = c("country", "year")) |>
+  rename(production = n_eggs) |>
+  relocate(production, .before = imports) |>
+  mutate(
+    production = if_else(item == "Hen eggs in shell, fresh", production, NA),
+    apparent_consumption = production - exports + imports,
+    imports_share = imports / apparent_consumption
+  )
+
+EU_egg_trade_df |>
+  filter(
+    year >= 2011,
+    item == "Hen eggs in shell, fresh",
+    country == "Austria"
+  ) |>
+  ggplot(aes(x = year)) +
+    geom_line(aes(y = share_enriched, color = "cages")) +
+    geom_point(aes(y = share_enriched, color = "cages")) +
+    geom_line(aes(y = imports_share, color = "imports")) +
+    geom_point(aes(y = imports_share, color = "imports")) +
+    scale_color_manual(
+      name = NULL,
+      values = c("cages" = "#EE9922", "imports" = "#FFCC22")
+    ) +
+    labs(y = "share", title = "Share of cage egg production and share of imports in Austria") +
+    theme_minimal()
+
+
+
 
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()
