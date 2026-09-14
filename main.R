@@ -98,34 +98,6 @@ adjusted_ADG_df <- adjust_ADG_for_trade_flows(production_df, FAO_trade_matrix)
 adjusted_ADG_df |> plot_adjusted_ADG(year = 2023)
 save_fig("adjusted_ADG_2023.png", height = 2000)
 
-# Quick plot of French egg importations ---------------------------------
-library("slider")
-
-france_df <- FAO_trade_matrix |>
-  filter(
-    country == "France",
-    animal == "hens",
-    element == "import_quantity"
-  ) |>
-  ungroup() |>
-  group_by(year) |>
-  summarise(quantity = sum(quantity), unit = unique(unit)) |>
-  ungroup() |>
-  left_join(
-    filter(production_df, animal == "hens", country == "France"),
-    join_by(year == year)
-  ) |>
-  mutate(
-    kg_per_egg = production_kg / n_eggs,
-    kg_per_egg_roll_mean = slide(kg_per_egg, mean, .before = 10) |> as.double(),
-    kg_per_egg_roll_mean = replace_na(last(kg_per_egg_roll_mean, na_rm = T)),
-    kg_per_egg = coalesce(kg_per_egg, kg_per_egg_roll_mean),
-    production_kg = coalesce(production_kg, n_eggs * kg_per_egg),
-    imported_share = quantity / production_kg
-  )
-
-france_df |> ggplot(aes(x = year, y = imported_share)) + geom_line()
-
 # Prepare EU laying hens housing system data ------------------------------
 hen_housing_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
 download_hen_housing_data(hen_housing_path)
@@ -140,7 +112,7 @@ map_hen_housing(hen_housing_df, year=2024)
 # Compare imports and share of cages --------------------------------------
 egg_production_df <- production_df |>
   filter(animal == "hens") |>
-  select(country, year, n_eggs)
+  select(country, year, n_eggs, production_kg)
 
 EU_egg_trade_df <- FAO_trade_matrix |>
   filter(
@@ -157,7 +129,7 @@ EU_egg_trade_df <- FAO_trade_matrix |>
   left_join(hen_housing_df, by = c("country", "year")) |>
   left_join(egg_production_df, by = c("country", "year")) |>
   rename(production = n_eggs) |>
-  relocate(production, .before = imports) |>
+  relocate(production, production_kg, .before = imports) |>
   mutate(
     production = if_else(item == "Hen eggs in shell, fresh", production, NA),
     apparent_consumption = production - exports + imports,
