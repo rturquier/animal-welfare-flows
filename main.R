@@ -104,7 +104,7 @@ download_hen_housing_data(hen_housing_path)
 hen_housing_df <- prepare_hen_housing_df(hen_housing_path)
 
 # Plot shares in a given country ----------------------------------------------
-hen_housing_df |> plot_housing_shares("France")
+hen_housing_df |> plot_housing_shares("Belgium")
 
 # Map housing shares in a given year --------------------------------------
 map_hen_housing(hen_housing_df, year=2024)
@@ -123,35 +123,43 @@ EU_egg_trade_df <- FAO_trade_matrix |>
   summarise(
     imports = sum(imports),
     exports = sum(exports),
-    unit = unique(unit)
+    unit = unique(unit),
+    .groups = "drop"
   ) |>
-  ungroup() |>
   left_join(hen_housing_df, by = c("country", "year")) |>
   left_join(egg_production_df, by = c("country", "year")) |>
   rename(production = n_eggs) |>
   relocate(production, production_kg, .before = imports) |>
+  group_by(country, item) |>
   mutate(
     production = if_else(item == "Hen eggs in shell, fresh", production, NA),
     apparent_consumption = production - exports + imports,
-    imports_share = imports / apparent_consumption
+    imports_share = imports / apparent_consumption,
+    imports_share_base_100_2011 =
+      100 * imports_share / imports_share[year == 2011],
+    share_cage = share_enriched + replace_na(share_battery, 0),
+    share_cage_base_100_2011 = 100 * share_cage / share_cage[year == 2011],
   )
 
 EU_egg_trade_df |>
   filter(
     year >= 2011,
     item == "Hen eggs in shell, fresh",
-    country == "Austria"
+    country == "Denmark"
   ) |>
   ggplot(aes(x = year)) +
-    geom_line(aes(y = share_enriched, color = "cages")) +
-    geom_point(aes(y = share_enriched, color = "cages")) +
-    geom_line(aes(y = imports_share, color = "imports")) +
-    geom_point(aes(y = imports_share, color = "imports")) +
+    geom_line(aes(y = share_cage_base_100_2011, color = "cages")) +
+    geom_point(aes(y = share_cage_base_100_2011, color = "cages")) +
+    geom_line(aes(y = imports_share_base_100_2011, color = "imports")) +
+    geom_point(aes(y = imports_share_base_100_2011, color = "imports")) +
     scale_color_manual(
       name = NULL,
       values = c("cages" = "#EE9922", "imports" = "#FFCC22")
     ) +
-    labs(y = "share", title = "Share of cage egg production and share of imports in Austria") +
+    labs(
+      y = "share",
+      title = "Share of cage egg production and share of imports in Denmark"
+    ) +
     theme_minimal()
 
 
