@@ -989,3 +989,28 @@ plot_adjusted_ADG <- function(adjusted_ADG_df, year=NULL){
     theme_minimal() +
     theme(legend.position = "top")
 }
+
+plot_ADG_evolution <- function(adjusted_ADG_df, country){
+  country_name <- if_else(country == "EU_27", "the EU", country)
+
+  ADG_evolution <- adjusted_ADG_df |>
+    filter(country == .env$country) |>
+    ggplot(aes(x = year)) +
+    geom_line(aes(y = ADG, color = "Production-based ADG")) +
+    geom_point(aes(y = ADG, color = "Production-based ADG")) +
+    geom_line(aes(y = adjusted_ADG, color = "Consumption-based ADG")) +
+    geom_point(aes(y = adjusted_ADG, color = "Consumption-based ADG")) +
+    scale_color_manual(
+      name = NULL,
+      values = c("Production-based ADG" = "#FFCC22",
+                 "Consumption-based ADG" = "#EE9922")
+    ) +
+    labs(
+      y = "Average Daily Gain (g / day)",
+      title = glue("Production- and consumption-based ",
+                   "broiler ADG in {country_name}")
+    ) +
+    theme_minimal()
+
+  return(ADG_evolution)
+}
