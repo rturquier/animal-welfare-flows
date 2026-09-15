@@ -861,7 +861,7 @@ map_hen_housing <- function(hen_housing_df, year = NULL){
     mutate(country = countryname(region, warn=FALSE))
 
   hen_housing_map <- hen_housing_df |>
-    filter(year == !!year) |>
+    filter(year == .env$year) |>
     inner_join(worldmap_df, by = "country") |>
     ggplot(aes(x = long, y = lat, group = group)) +
     coord_fixed(1.2) +
@@ -893,8 +893,8 @@ map_net_exports <- function(
     mutate(country = countryname(country)) |>
     group_by(country) |>
     filter(
-      year == !!year,
-      item == !!item
+      year == .env$year,
+      item == .env$item
     ) |>
     ungroup() |>
     mutate(
@@ -939,7 +939,7 @@ map_ADG <- function(production_df, year = NULL) {
 
   ADG_map <- production_df |>
     filter(
-      year == !!year,
+      year == .env$year,
       animal == "broilers",
     ) |>
     # Iceland's turnover rate is 25, which implies a lifespan of 2 weeks
@@ -965,7 +965,7 @@ plot_adjusted_ADG <- function(adjusted_ADG_df, year=NULL){
   if(year |> is.null()) {year = max(production_df$year)}
 
   adjusted_ADG_df |>
-    filter(year == !!year, country != "Iceland") |>
+    filter(year == .env$year, country != "Iceland") |>
     arrange(desc(adjusted_ADG)) |>
     ggplot() +
     geom_segment(
