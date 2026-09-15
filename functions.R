@@ -589,8 +589,8 @@ reconcile_mirror_discrepencies <- function(FAO_trade_matrix){
       suffix = c(".self_reported_imports", ".third_party_reported_imports"),
       relationship = "one-to-one"
     ) |>
-    mutate(imports = consolidate_trade_flow(imports_self_reported,
-                                            imports_third_party_reported))
+    mutate(imports = reconcile_by_minimum(imports_self_reported,
+                                          imports_third_party_reported))
   return(reconciled_imports)
 }
 
