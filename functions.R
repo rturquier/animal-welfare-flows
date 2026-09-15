@@ -650,6 +650,52 @@ prepare_FAO_trade_matrix <- function(raw_FAO_trade_matrix){
   return(FAO_trade_matrix)
 }
 
+aggregate_the_EU <- function(adjusted_ADG_df, production_df){
+  EU_production_df <- production_df |>
+    filter(
+      country %in% EU_27,
+      animal == "broilers"
+    ) |>
+    group_by(year) |>
+    summarise(across(c(n_slaughtered, n_animals, production_kg), sum)) |>
+    mutate(
+      country = "EU_27",
+      slaughter_rate = n_slaughtered / n_animals,
+      weight_per_animal = production_kg / n_slaughtered,
+      lifespan = (1 / slaughter_rate) * seas::year.length(year),  # days
+      ADG = weight_per_animal * 1000 / lifespan  # grams per day
+    ) |>
+    rename_with(\(x) glue("{x}.country"), !c(country, year))
+
+  former_european_areas <- c(
+    "Belgium-Luxembourg",
+    "Czechoslovakia",
+    "Yugoslav SFR"
+  )
+
+  EU_df <- adjusted_ADG_df |>
+    filter(country %in% EU_27) |>
+    filter(!(partner %in% c(EU_27, former_european_areas))) |>
+    group_by(partner, year) |>
+    summarise(across(c(imports_n_animals, exports_n_animals), sum)) |>
+    mutate(country = "EU_27") |>
+    relocate(country) |>
+    left_join(
+      EU_production_df, by = c("country", "year"), relationship = "many-to-one"
+    )
+
+  adjusted_ADG_with_EU_df <- adjusted_ADG_df |>
+    filter(!(country %in% EU_27), !(partner %in% EU_27)) |>
+    add_row(EU_df) |>
+    group_by(partner, year) |>
+    fill(ends_with(".partner")) |>
+    ungroup(year) |>
+    mutate(across(ends_with(".partner"), \(x) na.fill(x, "extend"))) |>
+    ungroup()
+
+  return(adjusted_ADG_with_EU_df)
+}
+
 adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
   broiler_production_df <- production_df |>
     filter(animal == "broilers") |>
@@ -677,6 +723,7 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
       imports_n_animals = imports_kg / weight_per_animal.partner,
       exports_n_animals = exports_kg / weight_per_animal.country,
     ) |>
+    aggregate_the_EU(production_df) |>
     group_by(country, year) |>
     summarise(
       n_slaughtered = unique(n_slaughtered.country),
