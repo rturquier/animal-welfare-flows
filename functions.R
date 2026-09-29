@@ -744,6 +744,65 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
   return(adjusted_ADG_df)
 }
 
+prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix){
+  egg_production_df <- production_df |>
+    filter(animal == "hens") |>
+    select(country, year, n_eggs, production_kg)
+
+  EU_egg_trade_df <- FAO_trade_matrix |>
+    filter(
+      item |> str_detect("(E|e)ggs"),
+      country %in% EU_27
+    ) |>
+    group_by(country, year, item) |>
+    summarise(
+      imports = sum(imports),
+      exports = sum(exports),
+      unit = unique(unit),
+      .groups = "drop"
+    ) |>
+    left_join(hen_housing_df, by = c("country", "year")) |>
+    left_join(egg_production_df, by = c("country", "year")) |>
+    rename(production = n_eggs) |>
+    relocate(production, production_kg, .before = imports) |>
+    group_by(country, item) |>
+    mutate(
+      production = if_else(item == "Hen eggs in shell, fresh", production, NA),
+      apparent_consumption = production - exports + imports,
+      imports_share = imports / apparent_consumption,
+      imports_share_base_100_2011 =
+        100 * imports_share / imports_share[year == 2011],
+      share_cage = share_enriched + replace_na(share_battery, 0),
+      share_cage_base_100_2011 = 100 * share_cage / share_cage[year == 2011],
+    )
+  return(EU_egg_trade_df)
+}
+
+plot_cage_and_import_shares <- function(EU_egg_trade_df, country){
+  cage_and_import_shares_plot <- EU_egg_trade_df |>
+      filter(
+        year >= 2011,
+        item == "Hen eggs in shell, fresh",
+        country == .env$country
+      ) |>
+      ggplot(aes(x = year)) +
+        geom_line(aes(y = share_cage_base_100_2011, color = "cages")) +
+        geom_point(aes(y = share_cage_base_100_2011, color = "cages")) +
+        geom_line(aes(y = imports_share_base_100_2011, color = "imports")) +
+        geom_point(aes(y = imports_share_base_100_2011, color = "imports")) +
+        scale_color_manual(
+          name = NULL,
+          values = c("cages" = "#EE9922", "imports" = "#FFCC22")
+        ) +
+        labs(
+          y = "share",
+          title = glue("Share of cage egg production and share of imports",
+                       " in {country} (base 100 in 2011)")
+        ) +
+        theme_minimal()
+  return(cage_and_import_shares_plot)
+}
+
 extract_ciwf_cage_data <- function() {
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
   please_download_CIWF_report(pdf_path)
