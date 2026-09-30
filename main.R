@@ -122,6 +122,78 @@ adjusted_ADG_df |>
 
 save_fig("ADG_trade_difference-vs-share_of_imports.svg")
 
+# Plot ADG_times_n_slaughtered vs adjusted_ADG_times_n_consumed --------
+adjusted_ADG_df |>
+  filter(year == 2024, country != "Iceland") |>
+  arrange(desc(adjusted_ADG_times_n_consumed)) |>
+  head(10) |>
+  ggplot() +
+  geom_segment(
+    aes(
+      x = ADG_times_n_slaughtered,
+      xend = adjusted_ADG_times_n_consumed,
+      y =  reorder(country, adjusted_ADG_times_n_consumed)
+    ),
+    color = "#222", linewidth = 0.6
+  ) +
+  geom_point(
+    aes(x = ADG_times_n_slaughtered, y = country, color = "ADG"),
+    shape = 19
+  ) +
+  geom_point(
+    aes(x = adjusted_ADG_times_n_consumed, y = country, color = "adjusted_ADG"),
+    shape = 17
+  ) +
+  scale_color_manual(
+    name = NULL,
+    values = c("ADG" = "#FFCC22", "adjusted_ADG" = "#EE9922")
+  ) +
+  labs(
+    x = glue("ADG  (g / day) × number of chickens (killed or consumed) in 2024"),
+    y = NULL,
+    title = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+save_fig("top 10 ADG times number of chickens.png")
+
+# Same thing with number of chickens --------
+adjusted_ADG_df |>
+  filter(year == 2024, country != "Iceland") |>
+  arrange(desc(adjusted_ADG_times_n_consumed)) |>
+  head(10) |>
+  ggplot() +
+  geom_segment(
+    aes(
+      x = n_slaughtered,
+      xend = n_consumed,
+      y =  reorder(country, n_consumed)
+    ),
+    color = "#222", linewidth = 0.6
+  ) +
+  geom_point(
+    aes(x = n_slaughtered, y = country, color = "n_slaughtered"),
+    shape = 19
+  ) +
+  geom_point(
+    aes(x = n_consumed, y = country, color = "n_consumed"),
+    shape = 17
+  ) +
+  scale_color_manual(
+    name = NULL,
+    values = c("n_slaughtered" = "#FFCC22", "n_consumed" = "#EE9922")
+  ) +
+  labs(
+    x = glue("Number of chickens killed and consumed in 2024"),
+    y = NULL,
+    title = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+save_fig("top 10 number of chickens killed and consumed.png")
+
 # Prepare EU laying hens housing system data ------------------------------
 hen_housing_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
 download_hen_housing_data(hen_housing_path)
