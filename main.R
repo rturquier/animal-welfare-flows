@@ -101,6 +101,27 @@ save_fig("adjusted_ADG_2024.png", height = 2000)
 # Plot both ADGs across time for a given country --------------------------
 adjusted_ADG_df |> plot_ADG_evolution(country = "EU_27")
 
+# Plot (adjust_ADG - ADG) vs share of imports  ------
+#' This shows that countries for which the difference is largest are countries
+#' that import most of their chicken consumption. Likewise, the trade adjustment
+#' makes almost no difference for countries that produce almost all the chicken
+#' they eat.
+adjusted_ADG_df |>
+  filter(year == 2024) |>
+  ggplot() +
+  geom_point(
+    aes(
+      x = share_of_imports_in_consumption,
+      y = ADG_trade_difference
+    ),
+    alpha = 0.4,
+    size = 0.6,
+    color = "#D21"
+  ) +
+  theme_minimal()
+
+save_fig("ADG_trade_difference-vs-share_of_imports.svg")
+
 # Prepare EU laying hens housing system data ------------------------------
 hen_housing_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
 download_hen_housing_data(hen_housing_path)
