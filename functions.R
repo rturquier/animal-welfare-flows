@@ -754,7 +754,6 @@ prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix){
   EU_egg_trade_df <- FAO_trade_matrix |>
     filter(
       item |> str_detect("(E|e)ggs"),
-      country %in% EU_27
     ) |>
     group_by(country, year, item) |>
     summarise(
@@ -772,10 +771,10 @@ prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix){
       production = if_else(item == "Hen eggs in shell, fresh", production, NA),
       apparent_consumption = production - exports + imports,
       imports_share = imports / apparent_consumption,
-      imports_share_base_100_2011 =
-        100 * imports_share / imports_share[year == 2011],
+      # imports_share_base_100_2011 =
+      #   100 * imports_share / imports_share[year == 2011],
       share_cage = share_enriched + replace_na(share_battery, 0),
-      share_cage_base_100_2011 = 100 * share_cage / share_cage[year == 2011],
+      # share_cage_base_100_2011 = 100 * share_cage / share_cage[year == 2011],
     )
   return(EU_egg_trade_df)
 }
