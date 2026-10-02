@@ -201,7 +201,7 @@ download_EU_hen_housing_data(hen_housing_path)
 hen_housing_df <- prepare_hen_housing_df(hen_housing_path)
 
 # Plot shares in a given country ----------------------------------------------
-hen_housing_df |> plot_housing_shares("Germany")
+hen_housing_df |> plot_housing_shares("Czechia")
 
 # Map housing shares in a given year --------------------------------------
 map_hen_housing(hen_housing_df, year=2024)
@@ -216,8 +216,13 @@ EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
 WFI_laying_hens_df <- prepare_WFI_laying_hens_df("Maps_Full Data_data.csv")
 manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
 
-download_UK_hen_housing_data("data/raw/UK_hen_cage_shares.ods")
-UK_hen_housing_data <- prepare_UK_hen_housing_data()
+UK_hen_housing_path <- "data/raw/UK_hen_cage_shares.ods"
+download_UK_hen_housing_data(UK_hen_housing_path)
+UK_hen_housing_data <- prepare_UK_hen_housing_data(UK_hen_housing_path)
+
+OWID_hen_housing_path <- "data/raw/OWID_hen_housing_data.csv"
+download_OWID_hen_housing_data(OWID_hen_housing_path)
+OWID_hen_housing_data <- prepare_OWID_hen_housing_data(OWID_hen_housing_path)
 
 # Get largest EU trade partners -----
 top_EU_partners <- FAO_trade_matrix |>
@@ -230,8 +235,6 @@ top_EU_partners <- FAO_trade_matrix |>
   filter(!(partner) %in% c(EU_27, "Belgium-Luxembourg")) |>
   arrange(desc(imports)) |>
   top_n(10, imports)
-
-
 
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()

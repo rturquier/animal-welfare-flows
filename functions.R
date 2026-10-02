@@ -39,6 +39,15 @@ download_UK_hen_housing_data <- download_wrapper(function(file_path){
   )
 })
 
+download_OWID_hen_housing_data <- download_wrapper(function(file_path){
+  #' Downloaded on 2026-10-02 from:
+  #' https://ourworldindata.org/grapher/eggs-cage-free
+  download.file(
+    "https://ourworldindata.org/grapher/eggs-cage-free.csv?v=1&csvType=full&useColumnShortNames=true",
+    file_path
+  )
+})
+
 download_production_data <- download_wrapper(function(file_path) {
   get_faostat_bulk("QCL") |> saveRDS(file_path)
 })
@@ -248,7 +257,7 @@ prepare_WFI_laying_hens_df <- function(data_file_name){
   return(WFI_laying_hens_df)
 }
 
-prepare_UK_hen_housing_data <- function(){
+prepare_UK_hen_housing_data <- function(UK_hen_housing_path){
   raw_UK_hen_housing_data <- read_ods("data/raw/UK_hen_cage_shares.ods",
                                       sheet = "Production_Type_Quarterly",
                                       range = "A3:G13")
@@ -261,6 +270,18 @@ prepare_UK_hen_housing_data <- function(){
     summarise(across(starts_with("share"), mean)) |>
     mutate(country = "United Kingdom", .before = year)
   return(UK_hen_housing_data)
+}
+
+prepare_OWID_hen_housing_data <- function(data_path){
+  OWID_hen_housing_data <- read_csv("data/raw/OWID_hen_housing_data.csv") |>
+    rename(percentage_cage_free = share_of_hens_cage_free) |>
+    mutate(
+      country = countryname(entity),
+      share_cage = 1 - (percentage_cage_free / 100)
+    ) |>
+    select(country, year, share_cage) |>
+    filter(!(country %in% EU_27))
+  return(OWID_hen_housing_data)
 }
 
 prepare_hen_housing_df <- function(hen_housing_path){
