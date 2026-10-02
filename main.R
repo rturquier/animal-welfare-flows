@@ -212,11 +212,8 @@ EU_egg_trade_df <- prepare_EU_egg_trade_df(production_df, FAO_trade_matrix)
 EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
 
 # Read global hen housing data --------------------------------------------
-#' Data downloaded from https://welfarefootprint.org/laying-hens/ on 2026-09-29
-#' At the bottom of the map, click on the download icon, then choose "Data". In
-#' the new window, go to the Full data tab, and then click "Download".
-WFI_laying_hens_df <- read_tsv("data/raw/Maps_Full Data_data.csv",
-                               locale = locale(encoding = "UTF-16LE"))
+WFI_laying_hens_df <- prepare_WFI_laying_hens_df("Maps_Full Data_data.csv")
+
 
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()

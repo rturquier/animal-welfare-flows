@@ -146,6 +146,22 @@ download_eurostat_pig_data <- download_wrapper(function(file_path) {
   get_eurostat("ef_ah_pigs") |> write_csv(file_path)
 })
 
+please_download_WFI_cage_share_map <- function(data_path){
+  #' Data downloaded on 2026-09-29 from the URL below
+  WFI_cage_map_data_url <- "https://welfarefootprint.org/laying-hens/"
+  if (!file.exists(data_path)) {
+    stop(
+      glue(
+        "Data not found at {data_path}. ",
+        "Download manually from: {WFI_cage_map_data_url}. ",
+        "At the bottom of the map, click on the download icon, then choose ",
+        "''Data''. In the new window, go to the Full data tab, and then click ",
+        "''Download''."
+      )
+    )
+  }
+}
+
 please_download_CIWF_report <- function(pdf_path){
   # PDF must be downloaded manually from the URL below and saved in `data/raw`.
   pdf_url <- "https://www.ciwf.org/media/7442226/ciwf_cage-age_report_oct-20_english_final.pdf"
@@ -154,7 +170,6 @@ please_download_CIWF_report <- function(pdf_path){
     stop(glue("PDF not found at {pdf_path}. Download manually from: {pdf_url}"))
   }
 }
-
 
 # Wrangling ---------------------------------------------------------------
 complete_with_dashboard_data <- function(hen_housing_df){
@@ -187,6 +202,41 @@ complete_with_dashboard_data <- function(hen_housing_df){
     anti_join(NA_rows, by=c("country", "year")) |>
     bind_rows(missing_rows, NA_rows)
   return(hen_housing_df_with_dashboard_data)
+}
+
+convert_percentage_string_to_numeric_share <- function(string){
+  #' e.g. "80%" --> 0.8
+  string |>
+    str_remove_all("%") |>
+    as.numeric() |>
+    (`/`)(100)
+}
+
+prepare_WFI_laying_hens_df <- function(data_file_name){
+  data_path <- glue("data/raw/", data_file_name)
+  please_download_WFI_cage_share_map(data_path)
+
+  raw_WFI_laying_hens_df <- read_tsv(data_path,
+                                     locale = locale(encoding = "UTF-16LE"))
+  WFI_laying_hens_df <- raw_WFI_laying_hens_df |>
+    select(
+      country = Country,
+      year = Year,
+      share_cage = Cage,
+      share_barn = Barn,
+      share_free_range = "Free range",
+      share_organic = Organic,
+      unknown_percent = Unknown,
+      source_name = Source,
+      source_url = "Available at",
+      n_hens = "Total Layers",
+      n_farms = "Commercial Egg farms",
+    ) |>
+    mutate(across(starts_with("share_"),
+                  convert_percentage_string_to_numeric_share)) |>
+    mutate(across(starts_with("share"),
+                  \(x) if_else(unknown_percent == "100%", NA, x)))
+  return(WFI_laying_hens_df)
 }
 
 prepare_hen_housing_df <- function(hen_housing_path){
