@@ -196,15 +196,15 @@ adjusted_ADG_df |>
 save_fig("top 10 number of chickens killed and consumed.png")
 
 # Prepare EU laying hens housing system data ------------------------------
-hen_housing_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
-download_EU_hen_housing_data(hen_housing_path)
-hen_housing_df <- prepare_hen_housing_df(hen_housing_path)
+EU_hen_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
+download_EU_hen_data(EU_hen_path)
+EU_hen_df <- prepare_EU_hen_df(EU_hen_path)
 
 # Plot shares in a given country ----------------------------------------------
-hen_housing_df |> plot_housing_shares("Czechia")
+EU_hen_df |> plot_housing_shares("Czechia")
 
 # Map housing shares in a given year --------------------------------------
-map_hen_housing(hen_housing_df, year=2024)
+map_hen_housing(EU_hen_df, year=2024)
 
 # Compare imports and share of cages --------------------------------------
 EU_egg_trade_df <- prepare_EU_egg_trade_df(production_df, FAO_trade_matrix)
@@ -213,16 +213,16 @@ EU_egg_trade_df <- prepare_EU_egg_trade_df(production_df, FAO_trade_matrix)
 EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
 
 # Read global hen housing data --------------------------------------------
-WFI_laying_hens_df <- prepare_WFI_laying_hens_df("Maps_Full Data_data.csv")
+WFI_hens_df <- prepare_WFI_hens_df("Maps_Full Data_data.csv")
 manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
 
-UK_hen_housing_path <- "data/raw/UK_hen_cage_shares.ods"
-download_UK_hen_housing_data(UK_hen_housing_path)
-UK_hen_housing_data <- prepare_UK_hen_housing_data(UK_hen_housing_path)
+UK_hen_path <- "data/raw/UK_hen_cage_shares.ods"
+download_UK_hen_data(UK_hen_path)
+UK_hen_df <- prepare_UK_hen_data(UK_hen_path)
 
-OWID_hen_housing_path <- "data/raw/OWID_hen_housing_data.csv"
-download_OWID_hen_housing_data(OWID_hen_housing_path)
-OWID_hen_housing_data <- prepare_OWID_hen_housing_data(OWID_hen_housing_path)
+OWID_hen_path <- "data/raw/OWID_hen_data.csv"
+download_OWID_hen_data(OWID_hen_path)
+OWID_hen_df <- prepare_OWID_hen_data(OWID_hen_path)
 
 # Get largest EU trade partners -----
 top_EU_partners <- FAO_trade_matrix |>
@@ -242,9 +242,9 @@ ciwf_cage_df <- extract_ciwf_cage_data()
 # Eurostat data on pig housing -----------------------------------------------
 library(eurostat)
 
-pig_housing_data_path <- "data/raw/pig_housing.csv"
-download_eurostat_pig_data(pig_housing_data_path)
-pig_housing_data <- pig_housing_data_path |> read_csv()
+pig_data_path <- "data/raw/pig_housing.csv"
+download_eurostat_pig_data(pig_data_path)
+pig_data <- pig_data_path |> read_csv()
 
-pig_housing_df <- pig_housing_data |>
+pig_df <- pig_data |>
   label_eurostat(fix_duplicated = T)

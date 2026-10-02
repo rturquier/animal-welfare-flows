@@ -21,7 +21,7 @@ download_wrapper <- function(.download){
   }
 }
 
-download_EU_hen_housing_data <- download_wrapper(function(file_path){
+download_EU_hen_data <- download_wrapper(function(file_path){
   #' Downloaded on 2026-09-10 from:
   #' https://agriculture.ec.europa.eu/farming/animal-products/eggs_en
   download.file(
@@ -30,7 +30,7 @@ download_EU_hen_housing_data <- download_wrapper(function(file_path){
   )
 })
 
-download_UK_hen_housing_data <- download_wrapper(function(file_path){
+download_UK_hen_data <- download_wrapper(function(file_path){
   #' Downloaded on 2026-10-02 from:
   #' https://www.gov.uk/government/statistics/egg-statistics
   download.file(
@@ -39,7 +39,7 @@ download_UK_hen_housing_data <- download_wrapper(function(file_path){
   )
 })
 
-download_OWID_hen_housing_data <- download_wrapper(function(file_path){
+download_OWID_hen_data <- download_wrapper(function(file_path){
   #' Downloaded on 2026-10-02 from:
   #' https://ourworldindata.org/grapher/eggs-cage-free
   download.file(
@@ -190,7 +190,7 @@ please_download_CIWF_report <- function(pdf_path){
 }
 
 # Wrangling ---------------------------------------------------------------
-complete_with_dashboard_data <- function(hen_housing_df){
+complete_with_dashboard_data <- function(EU_hen_df){
   #' Add data copied from individual dashboard PDFs
   #'
   #' At time of coding, this function only adds one row (France, 2024).
@@ -202,24 +202,24 @@ complete_with_dashboard_data <- function(hen_housing_df){
            .keep = "unused") |>
     mutate(across(
       matches("share_(enriched|barn|free_range|organic)"),
-      ~ round(. * n_laying_hens),
+      ~ round(. * n_hens),
       .names = "{str_replace(.col, 'share', 'n')}"
     ))
 
   missing_rows <- egg_dashboard_df |>
-    anti_join(hen_housing_df, by = c("country", "year"))
+    anti_join(EU_hen_df, by = c("country", "year"))
 
-  NA_rows <- hen_housing_df |>
+  NA_rows <- EU_hen_df |>
     filter(
       if_any(-c("country", "year", "n_battery", "share_battery"),
              ~is.na(.))
     ) |>
     semi_join(x=egg_dashboard_df, y=_, by=c("country", "year"))
 
-  hen_housing_df_with_dashboard_data <- hen_housing_df |>
+  EU_hen_df_with_dashboard_data <- EU_hen_df |>
     anti_join(NA_rows, by=c("country", "year")) |>
     bind_rows(missing_rows, NA_rows)
-  return(hen_housing_df_with_dashboard_data)
+  return(EU_hen_df_with_dashboard_data)
 }
 
 convert_percentage_string_to_numeric_share <- function(string){
@@ -230,13 +230,12 @@ convert_percentage_string_to_numeric_share <- function(string){
     (`/`)(100)
 }
 
-prepare_WFI_laying_hens_df <- function(data_file_name){
+prepare_WFI_hens_df <- function(data_file_name){
   data_path <- glue("data/raw/", data_file_name)
   please_download_WFI_cage_share_map(data_path)
 
-  raw_WFI_laying_hens_df <- read_tsv(data_path,
-                                     locale = locale(encoding = "UTF-16LE"))
-  WFI_laying_hens_df <- raw_WFI_laying_hens_df |>
+  raw_WFI_hens_df <- read_tsv(data_path, locale = locale(encoding = "UTF-16LE"))
+  WFI_hens_df <- raw_WFI_hens_df |>
     select(
       country = Country,
       year = Year,
@@ -254,14 +253,14 @@ prepare_WFI_laying_hens_df <- function(data_file_name){
                   convert_percentage_string_to_numeric_share)) |>
     mutate(across(starts_with("share"),
                   \(x) if_else(unknown_percent == "100%", NA, x)))
-  return(WFI_laying_hens_df)
+  return(WFI_hens_df)
 }
 
-prepare_UK_hen_housing_data <- function(UK_hen_housing_path){
-  raw_UK_hen_housing_data <- read_ods("data/raw/UK_hen_cage_shares.ods",
-                                      sheet = "Production_Type_Quarterly",
-                                      range = "A3:G13")
-  UK_hen_housing_data <- raw_UK_hen_housing_data |>
+prepare_UK_hen_data <- function(UK_hen_path){
+  raw_UK_hen_data <- read_ods("data/raw/UK_hen_cage_shares.ods",
+                               sheet = "Production_Type_Quarterly",
+                               range = "A3:G13")
+  UK_hen_data <- raw_UK_hen_data |>
     rename_with(str_to_snake) |>
     mutate(across(c(enriched, barn, free_range, organic), \(x) x / total)) |>
     rename_with(\(x) glue("share_{x}"),
@@ -269,11 +268,11 @@ prepare_UK_hen_housing_data <- function(UK_hen_housing_path){
     group_by(year) |>
     summarise(across(starts_with("share"), mean)) |>
     mutate(country = "United Kingdom", .before = year)
-  return(UK_hen_housing_data)
+  return(UK_hen_data)
 }
 
-prepare_OWID_hen_housing_data <- function(data_path){
-  OWID_hen_housing_data <- read_csv("data/raw/OWID_hen_housing_data.csv") |>
+prepare_OWID_hen_data <- function(data_path){
+  OWID_hen_data <- read_csv("data/raw/OWID_hen_data.csv") |>
     rename(percentage_cage_free = share_of_hens_cage_free) |>
     mutate(
       country = countryname(entity),
@@ -281,24 +280,24 @@ prepare_OWID_hen_housing_data <- function(data_path){
     ) |>
     select(country, year, share_cage) |>
     filter(!(country %in% EU_27))
-  return(OWID_hen_housing_data)
+  return(OWID_hen_data)
 }
 
-prepare_hen_housing_df <- function(hen_housing_path){
+prepare_EU_hen_df <- function(EU_hen_path){
   hen_housing_numbers <- read_excel(
-    hen_housing_path,
+    EU_hen_path,
     range = "A4:H408",
     col_names = c("country", "year", "n_battery", "n_enriched", "n_free_range",
-                  "n_barn", "n_organic", "n_laying_hens")
+                  "n_barn", "n_organic", "n_hens")
   )
   hen_housing_shares <- read_excel(
-    hen_housing_path,
+    EU_hen_path,
     range = "L4:P408",
     col_names = c("share_battery", "share_enriched", "share_free_range",
                   "share_barn", "share_organic")
   )
 
-  hen_housing_df <- hen_housing_numbers |>
+  EU_hen_df <- hen_housing_numbers |>
     bind_cols(hen_housing_shares) |>
     fill(country) |>
     mutate(country = countryname(country)) |>
@@ -309,24 +308,24 @@ prepare_hen_housing_df <- function(hen_housing_path){
     relocate(share_free_range, .after = share_barn) |>
     mutate(across(matches("year|n_.+"), as.integer)) |>
     fix_Belgium_and_Poland_2014()
-  return(hen_housing_df)
+  return(EU_hen_df)
 }
 
-fix_Belgium_and_Poland_2014 <- function(hen_housing_df){
+fix_Belgium_and_Poland_2014 <- function(EU_hen_df){
   #' Replace Belgium and Poland 2014 with NAs
   #'
   #' For Belgium and Poland, 2014 is nearly identical to 2013, but with `barn`
   #' and `free_range` swapped. This is very probably a mistake.
-  be_2014_row <- which(hen_housing_df$country == "Belgium"
-                       & hen_housing_df$year == 2014)
-  pl_2014_row <- which(hen_housing_df$country == "Poland"
-                       & hen_housing_df$year == 2014)
-  all_columns_except_country_and_year <- hen_housing_df |>
+  be_2014_row <- which(EU_hen_df$country == "Belgium"
+                       & EU_hen_df$year == 2014)
+  pl_2014_row <- which(EU_hen_df$country == "Poland"
+                       & EU_hen_df$year == 2014)
+  all_columns_except_country_and_year <- EU_hen_df |>
     colnames() |>
     tail(-2)
-  hen_housing_df[be_2014_row, all_columns_except_country_and_year] <- NA
-  hen_housing_df[pl_2014_row, all_columns_except_country_and_year] <- NA
-  return(hen_housing_df)
+  EU_hen_df[be_2014_row, all_columns_except_country_and_year] <- NA
+  EU_hen_df[pl_2014_row, all_columns_except_country_and_year] <- NA
+  return(EU_hen_df)
 }
 
 convert_FAO_units <- function(FAO_df){
@@ -841,7 +840,7 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
   return(adjusted_ADG_df)
 }
 
-prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix){
+prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
   egg_production_df <- production_df |>
     filter(animal == "hens") |>
     select(country, year, n_eggs, production_kg)
@@ -857,7 +856,7 @@ prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix){
       unit = unique(unit),
       .groups = "drop"
     ) |>
-    left_join(hen_housing_df, by = c("country", "year")) |>
+    left_join(hen_df, by = c("country", "year")) |>
     left_join(egg_production_df, by = c("country", "year")) |>
     rename(production = n_eggs) |>
     relocate(production, production_kg, .before = imports) |>
@@ -973,8 +972,8 @@ plot_global_meat_imports <- function(FAO_trade_df){
   return(global_meat_imports_plot)
 }
 
-plot_housing_shares <- function(hen_housing_df, country_name){
-  housing_shares_plot_df <- hen_housing_df |>
+plot_housing_shares <- function(hen_df, country_name){
+  housing_shares_plot_df <- hen_df |>
     filter(country == country_name) |>
     mutate(across(matches("battery|enriched|barn|free_range|organic"),
                   ~na_if(., 0))) |>
@@ -1009,13 +1008,13 @@ plot_housing_shares <- function(hen_housing_df, country_name){
   return(housing_shares_plot)
 }
 
-map_hen_housing <- function(hen_housing_df, year = NULL){
+map_hen_housing <- function(hen_df, year = NULL){
   if(year |> is.null()) {year = max(production_df$year)}
 
   worldmap_df <- map_data("world") |>
     mutate(country = countryname(region, warn=FALSE))
 
-  hen_housing_map <- hen_housing_df |>
+  hen_housing_map <- hen_df |>
     filter(year == .env$year) |>
     inner_join(worldmap_df, by = "country") |>
     ggplot(aes(x = long, y = lat, group = group)) +
