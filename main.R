@@ -213,7 +213,7 @@ EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
 
 # Read global hen housing data --------------------------------------------
 WFI_laying_hens_df <- prepare_WFI_laying_hens_df("Maps_Full Data_data.csv")
-
+manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
 
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()
