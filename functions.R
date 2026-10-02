@@ -21,11 +21,20 @@ download_wrapper <- function(.download){
   }
 }
 
-download_hen_housing_data <- download_wrapper(function(file_path){
+download_EU_hen_housing_data <- download_wrapper(function(file_path){
   #' Downloaded on 2026-09-10 from:
   #' https://agriculture.ec.europa.eu/farming/animal-products/eggs_en
   download.file(
     "https://agriculture.ec.europa.eu/document/download/3611ba2e-ad9f-4b39-83db-00be67dc4022_en?filename=laying-hens-by-way-of-keeping-2011-2025_en.xlsx",
+    file_path
+  )
+})
+
+download_UK_hen_housing_data <- download_wrapper(function(file_path){
+  #' Downloaded on 2026-10-02 from:
+  #' https://www.gov.uk/government/statistics/egg-statistics
+  download.file(
+    "https://assets.publishing.service.gov.uk/media/6a69cdd30825cc51a6c37cba/Egg_production_dataset_20260730.ods",
     file_path
   )
 })
@@ -237,6 +246,21 @@ prepare_WFI_laying_hens_df <- function(data_file_name){
     mutate(across(starts_with("share"),
                   \(x) if_else(unknown_percent == "100%", NA, x)))
   return(WFI_laying_hens_df)
+}
+
+prepare_UK_hen_housing_data <- function(){
+  raw_UK_hen_housing_data <- read_ods("data/raw/UK_hen_cage_shares.ods",
+                                      sheet = "Production_Type_Quarterly",
+                                      range = "A3:G13")
+  UK_hen_housing_data <- raw_UK_hen_housing_data |>
+    rename_with(str_to_snake) |>
+    mutate(across(c(enriched, barn, free_range, organic), \(x) x / total)) |>
+    rename_with(\(x) glue("share_{x}"),
+                c(enriched, barn, free_range, organic)) |>
+    group_by(year) |>
+    summarise(across(starts_with("share"), mean)) |>
+    mutate(country = "United Kingdom", .before = year)
+  return(UK_hen_housing_data)
 }
 
 prepare_hen_housing_df <- function(hen_housing_path){

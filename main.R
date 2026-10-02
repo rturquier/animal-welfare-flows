@@ -3,6 +3,7 @@ library(tidyverse)
 library(glue)
 library(FAOSTAT)
 library(readxl)
+library(readODS)
 library(countrycode)
 library(pdftools)
 library(maps)
@@ -196,7 +197,7 @@ save_fig("top 10 number of chickens killed and consumed.png")
 
 # Prepare EU laying hens housing system data ------------------------------
 hen_housing_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
-download_hen_housing_data(hen_housing_path)
+download_EU_hen_housing_data(hen_housing_path)
 hen_housing_df <- prepare_hen_housing_df(hen_housing_path)
 
 # Plot shares in a given country ----------------------------------------------
@@ -214,6 +215,9 @@ EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
 # Read global hen housing data --------------------------------------------
 WFI_laying_hens_df <- prepare_WFI_laying_hens_df("Maps_Full Data_data.csv")
 manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
+
+download_UK_hen_housing_data("data/raw/UK_hen_cage_shares.ods")
+UK_hen_housing_data <- prepare_UK_hen_housing_data()
 
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()
