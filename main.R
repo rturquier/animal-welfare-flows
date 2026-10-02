@@ -219,6 +219,20 @@ manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
 download_UK_hen_housing_data("data/raw/UK_hen_cage_shares.ods")
 UK_hen_housing_data <- prepare_UK_hen_housing_data()
 
+# Get largest EU trade partners -----
+top_EU_partners <- FAO_trade_matrix |>
+  filter(
+    item == "Hen eggs in shell, fresh",
+    country %in% EU_27,
+  ) |>
+  group_by(year, partner) |>
+  summarise(imports = sum(imports), exports = sum(exports)) |>
+  filter(!(partner) %in% c(EU_27, "Belgium-Luxembourg")) |>
+  arrange(desc(imports)) |>
+  top_n(10, imports)
+
+
+
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()
 
