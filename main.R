@@ -213,16 +213,7 @@ EU_egg_trade_df <- prepare_EU_egg_trade_df(production_df, FAO_trade_matrix)
 EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
 
 # Read global hen housing data --------------------------------------------
-WFI_hens_df <- prepare_WFI_hens_df("Maps_Full Data_data.csv")
-manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
-
-UK_hen_path <- "data/raw/UK_hen_cage_shares.ods"
-download_UK_hen_data(UK_hen_path)
-UK_hen_df <- prepare_UK_hen_data(UK_hen_path)
-
-OWID_hen_path <- "data/raw/OWID_hen_data.csv"
-download_OWID_hen_data(OWID_hen_path)
-OWID_hen_df <- prepare_OWID_hen_data(OWID_hen_path)
+hen_df <- prepare_hen_df()
 
 # Get largest EU trade partners -----
 top_EU_partners <- FAO_trade_matrix |>

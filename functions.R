@@ -230,6 +230,23 @@ convert_percentage_string_to_numeric_share <- function(string){
     (`/`)(100)
 }
 
+normalize_WFI_country_names <- function(country_names) {
+  WFI_typos <- c(
+    "Kyrkystan" = "Kyrgyzstan",
+    "Morrocco" = "Morocco",
+    "Philipines" = "Philippines",
+    "Taijikistan" = "Tajikistan"
+  )
+  normalized_country_names <- countrycode(
+    country_names,
+    origin = "country.name.en",
+    destination = "country.name.en",
+    custom_match = WFI_typos,
+    nomatch = NULL # keep the original country name if there's no match
+  )
+  return(normalized_country_names)
+}
+
 prepare_WFI_hens_df <- function(data_file_name){
   data_path <- glue("data/raw/", data_file_name)
   please_download_WFI_cage_share_map(data_path)
@@ -249,10 +266,13 @@ prepare_WFI_hens_df <- function(data_file_name){
       n_hens = "Total Layers",
       n_farms = "Commercial Egg farms",
     ) |>
-    mutate(across(starts_with("share_"),
-                  convert_percentage_string_to_numeric_share)) |>
-    mutate(across(starts_with("share"),
-                  \(x) if_else(unknown_percent == "100%", NA, x)))
+    mutate(
+      country = normalize_WFI_country_names(country),
+      across(starts_with("share_"), convert_percentage_string_to_numeric_share),
+      across(starts_with("share"), \(x) if_else(unknown_percent == "100%",
+                                                NA,
+                                                x)  )
+    )
   return(WFI_hens_df)
 }
 
@@ -306,7 +326,12 @@ prepare_EU_hen_df <- function(EU_hen_path){
     arrange(country, year) |>
     relocate(n_free_range, .after = n_barn) |>
     relocate(share_free_range, .after = share_barn) |>
-    mutate(across(matches("year|n_.+"), as.integer)) |>
+    mutate(
+      across(matches("year|n_.+"), as.integer),
+      share_battery = if_else(!is.na(share_enriched),
+                              replace_na(share_battery, 0),
+                              share_battery)
+    ) |>
     fix_Belgium_and_Poland_2014()
   return(EU_hen_df)
 }
@@ -326,6 +351,121 @@ fix_Belgium_and_Poland_2014 <- function(EU_hen_df){
   EU_hen_df[be_2014_row, all_columns_except_country_and_year] <- NA
   EU_hen_df[pl_2014_row, all_columns_except_country_and_year] <- NA
   return(EU_hen_df)
+}
+
+share_of_remaining_batteries <- function(year, ban_year){
+  #' Assume a 10-year linear transition away from conventional cages
+  (ban_year - year) |>
+    pmin(10) |>  # Ten years before the ban, all cages are conventional
+    pmax(0) |>  # On the year of the ban, all cages are enriched
+    (`/`)(10)
+}
+
+split_cages_between_conventional_and_enriched <- function(hen_df){
+  battery_ban_df <- read_csv("data/battery_bans.csv") |>
+    select(country, year_of_battery_ban)
+
+  hen_df_with_cage_split <- hen_df |>
+    full_join(battery_ban_df, by = "country") |>
+    fill(year_of_battery_ban, .direction = "downup") |>
+    mutate(
+      share_battery = case_when(
+        !is.na(share_battery) | !is.na(share_enriched) ~ share_battery,
+        # Assume linear transition over 10 years for the UK, Norway, Ukraine,
+        # Turkey and Northe Macedonia, as these countries have at least some
+        # enriched cages.
+        !is.na(year_of_battery_ban) & !is.na(share_cage) ~ (
+          share_of_remaining_batteries(year, year_of_battery_ban) * share_cage
+        ),
+        # For other non-EU partners, assume 100% of cages are conventional.
+        is.na(year_of_battery_ban) & !is.na(share_cage) ~ share_cage,
+        .default = NA
+      ),
+      share_enriched = if_else(
+        is.na(share_enriched) & !is.na(share_battery) & !is.na(share_cage),
+        share_cage - share_battery,
+        share_enriched
+      )
+    )
+  return(hen_df_with_cage_split)
+}
+
+combine_hen_housing_data_sources <- function(
+    manual_cage_shares_df, EU_hen_df, WFI_hens_df, OWID_hen_df
+){
+  combined_hen_df <- bind_rows(   # The order matters here:
+    manual_cage_shares_df,  # manually populated values are preferred
+    EU_hen_df,              # over EU commision data,
+    WFI_hens_df,            # WFI data provides values for non-EU countries,
+    OWID_hen_df             # and OWID data is a fallback.
+  ) |>
+    group_by(country, year) |>
+    slice_head(n = 1) |>  # Keep first of duplicate rows in order of appearance
+    relocate(share_battery, share_enriched, .after = share_cage)
+
+  return(combined_hen_df)
+}
+
+impute_missing_hen_housing_data <- function(combined_hen_df){
+  year_range <- min(combined_hen_df$year):max(combined_hen_df$year)
+  latest_year_in_EU_data <- max(EU_hen_df$year)
+
+  completed_df <- combined_hen_df |>
+    group_by(country) |>
+    complete(year = year_range) |>
+    mutate(imputed_shares = if_else(if_all(share_cage:share_organic, is.na),
+                                    TRUE,
+                                    FALSE)) |>
+    mutate(
+      share_cage = coalesce(share_cage, share_battery + share_enriched),
+      share_cage = na.fill(share_cage, c("extend", NA, "extend")),
+      share_cage = na.fill(share_cage, "extend"),
+    ) |>
+    split_cages_between_conventional_and_enriched() |>
+    rowwise() |>
+    mutate(
+      # Fill free range, barn and organic shares as 1 - the sum of other shares
+      share_free_range = if_else(is.na(share_free_range) & !is.na(share_cage),
+                                 1 - sum(c_across(share_battery:share_organic),
+                                         na.rm = TRUE),
+                                 share_free_range),
+      share_barn = if_else(is.na(share_barn) & !is.na(share_cage),
+                           1 - sum(c_across(share_battery:share_organic),
+                                   na.rm = TRUE),
+                           share_barn),
+      share_organic = if_else(is.na(share_organic) & !is.na(share_cage),
+                              1 - sum(c_across(share_battery:share_organic),
+                                      na.rm = TRUE),
+                              share_organic)
+    ) |>
+    group_by(country) |>
+    mutate(
+      across(starts_with("share_"), \(x) na.fill(x, c("extend", NA, "extend"))),
+      across(starts_with("share_"), \(x) na.fill(x, "extend"))
+    ) |>
+    filter(year <= latest_year_in_EU_data)
+
+  return(completed_df)
+}
+
+prepare_hen_df <- function(){
+  manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
+
+  EU_hen_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
+  download_EU_hen_data(EU_hen_path)
+  EU_hen_df <- prepare_EU_hen_df(EU_hen_path)
+
+  WFI_hens_df <- prepare_WFI_hens_df("Maps_Full Data_data.csv")
+
+  OWID_hen_path <- "data/raw/OWID_hen_data.csv"
+  download_OWID_hen_data(OWID_hen_path)
+  OWID_hen_df <- prepare_OWID_hen_data(OWID_hen_path)
+
+  hen_df <-
+    combine_hen_housing_data_sources(manual_cage_shares_df, EU_hen_df,
+                                     WFI_hens_df, OWID_hen_df) |>
+    impute_missing_hen_housing_data()
+  return(hen_df)
 }
 
 convert_FAO_units <- function(FAO_df){
