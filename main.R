@@ -201,10 +201,13 @@ download_EU_hen_data(EU_hen_path)
 EU_hen_df <- prepare_EU_hen_df(EU_hen_path)
 
 # Plot shares in a given country ----------------------------------------------
-EU_hen_df |> plot_housing_shares("Czechia")
+country = "Spain"
+EU_hen_df |> plot_housing_shares(country)
+save_fig(glue("hen_housing_shares_{country}.png"))
 
 # Map housing shares in a given year --------------------------------------
 map_hen_housing(EU_hen_df, year=2024)
+save_fig("hen_housing_EU_map.png")
 
 # Read global hen housing data --------------------------------------------
 hen_df <- prepare_hen_df()
