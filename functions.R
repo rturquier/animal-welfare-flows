@@ -393,7 +393,7 @@ combine_hen_housing_data_sources <- function(
 
 fill_missing_housing_shares_rowise <- function(combined_hen_df){
   # Fill free range, barn and organic shares as 1 - the sum of other shares
-  rowise_filled_hen_df <- combined_hen_df |>
+  rowwise_filled_hen_df <- combined_hen_df |>
     rowwise() |>
     mutate(
       share_free_range = if_else(
@@ -413,7 +413,7 @@ fill_missing_housing_shares_rowise <- function(combined_hen_df){
       )
     ) |>
     ungroup()
-  return(rowise_filled_hen_df)
+  return(rowwise_filled_hen_df)
 }
 
 nanpapiwilelukinmi <- rowise_filled_hen_df |>
@@ -437,17 +437,13 @@ impute_missing_hen_housing_data <- function(combined_hen_df){
     mutate(hen_housing_shares_imputed = FALSE) |>
     group_by(country) |>
     complete(year = year_range) |>
-    mutate(hen_housing_shares_imputed = replace_na(hen_housing_shares_imputed, TRUE)) |>
     mutate(
+      hen_housing_shares_imputed = replace_na(hen_housing_shares_imputed, TRUE),
       share_cage = coalesce(share_cage, share_battery + share_enriched),
-      share_cage = na.fill(share_cage, c("extend", NA, "extend")),
-      share_cage = na.fill(share_cage, "extend"),
+      across(share_cage:share_organic, \(x) na.fill(x, "extend"))
     ) |>
     split_cages_between_conventional_and_enriched() |>
-    group_by(country) |>
     mutate(
-      across(starts_with("share_"), \(x) na.fill(x, c("extend", NA, "extend"))),
-      across(starts_with("share_"), \(x) na.fill(x, "extend"))
     ) |>
     filter(year %in% earliest_year_in_EU_data:latest_year_in_EU_data)
 
