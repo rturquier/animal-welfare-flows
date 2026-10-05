@@ -391,7 +391,7 @@ combine_hen_housing_data_sources <- function(
   return(combined_hen_df)
 }
 
-fill_missing_housing_shares_rowise <- function(combined_hen_df){
+fill_missing_housing_shares_rowwise <- function(combined_hen_df){
   # Fill free range, barn and organic shares as 1 - the sum of other shares
   rowwise_filled_hen_df <- combined_hen_df |>
     rowwise() |>
@@ -416,23 +416,15 @@ fill_missing_housing_shares_rowise <- function(combined_hen_df){
   return(rowwise_filled_hen_df)
 }
 
-nanpapiwilelukinmi <- rowise_filled_hen_df |>
-  filter(
-    !if_all(share_battery:share_organic, is.na),
-    if_any(share_battery:share_organic, is.na)
-  )
-
-
-
 impute_missing_hen_housing_data <- function(combined_hen_df){
-  year_range <- min(combined_hen_df$year):max(combined_hen_df$year)
-  latest_year_in_EU_data <-
-    combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> max()
   earliest_year_in_EU_data <-
     combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> min()
+  latest_year_in_EU_data <-
+    combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> max()
+  year_range <- earliest_year_in_EU_data:latest_year_in_EU_data
 
   completed_df <- combined_hen_df |>
-    fill_missing_housing_shares_rowise() |>
+    fill_missing_housing_shares_rowwise() |>
     filter(!if_all(share_battery:share_organic, is.na)) |>
     mutate(hen_housing_shares_imputed = FALSE) |>
     group_by(country) |>
