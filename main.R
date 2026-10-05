@@ -96,8 +96,8 @@ save_fig("ADG.svg")
 adjusted_ADG_df <- adjust_ADG_for_trade_flows(production_df, FAO_trade_matrix)
 
 # Plot the difference -----------------------------------------------------
-adjusted_ADG_df |> plot_adjusted_ADG(year = 2024)
-save_fig("adjusted_ADG_2024.png", height = 2000)
+adjusted_ADG_df |> plot_adjusted_ADG(year = 2024, only_top_n = 10)
+save_fig("adjusted_ADG_2024.png")
 
 # Plot both ADGs across time for a given country --------------------------
 adjusted_ADG_df |> plot_ADG_evolution(country = "EU_27")

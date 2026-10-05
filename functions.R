@@ -1256,12 +1256,14 @@ map_ADG <- function(production_df, year = NULL) {
   return(ADG_map)
 }
 
-plot_adjusted_ADG <- function(adjusted_ADG_df, year=NULL){
+plot_adjusted_ADG <- function(adjusted_ADG_df, year=NULL, only_top_n=177){
   if(year |> is.null()) {year = max(production_df$year)}
 
   adjusted_ADG_df |>
     filter(year == .env$year, country != "Iceland") |>
+    ungroup() |>
     arrange(desc(adjusted_ADG)) |>
+    slice_head(n = only_top_n) |>
     ggplot() +
     geom_segment(
       aes(x = ADG, xend = adjusted_ADG, y =  reorder(country, adjusted_ADG)),
