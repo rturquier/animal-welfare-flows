@@ -213,7 +213,7 @@ save_fig("hen_housing_EU_map.png")
 hen_df <- prepare_hen_df()
 
 # Compare imports and share of cages --------------------------------------
-EU_egg_trade_df <- prepare_EU_egg_trade_df(
+egg_trade_df <- prepare_egg_trade_df(
   production_df,
   FAO_trade_matrix,
   hen_df

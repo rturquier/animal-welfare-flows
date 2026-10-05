@@ -981,12 +981,12 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
   return(adjusted_ADG_df)
 }
 
-prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
+prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
   egg_production_df <- production_df |>
     filter(animal == "hens") |>
     select(country, year, n_eggs, production_kg)
 
-  EU_egg_trade_df <- FAO_trade_matrix |>
+  egg_trade_df <- FAO_trade_matrix |>
     filter(
       item |> str_detect("(E|e)ggs"),
     ) |>
@@ -1006,12 +1006,9 @@ prepare_EU_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
       production = if_else(item == "Hen eggs in shell, fresh", production, NA),
       apparent_consumption = production - exports + imports,
       imports_share = imports / apparent_consumption,
-      # imports_share_base_100_2011 =
-      #   100 * imports_share / imports_share[year == 2011],
       share_cage = share_enriched + replace_na(share_battery, 0),
-      # share_cage_base_100_2011 = 100 * share_cage / share_cage[year == 2011],
     )
-  return(EU_egg_trade_df)
+  return(egg_trade_df)
 }
 
 plot_cage_and_import_shares <- function(EU_egg_trade_df, country){
