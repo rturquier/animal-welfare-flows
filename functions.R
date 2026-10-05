@@ -276,21 +276,6 @@ prepare_WFI_hens_df <- function(data_file_name){
   return(WFI_hens_df)
 }
 
-prepare_UK_hen_data <- function(UK_hen_path){
-  raw_UK_hen_data <- read_ods("data/raw/UK_hen_cage_shares.ods",
-                               sheet = "Production_Type_Quarterly",
-                               range = "A3:G13")
-  UK_hen_data <- raw_UK_hen_data |>
-    rename_with(str_to_snake) |>
-    mutate(across(c(enriched, barn, free_range, organic), \(x) x / total)) |>
-    rename_with(\(x) glue("share_{x}"),
-                c(enriched, barn, free_range, organic)) |>
-    group_by(year) |>
-    summarise(across(starts_with("share"), mean)) |>
-    mutate(country = "United Kingdom", .before = year)
-  return(UK_hen_data)
-}
-
 prepare_OWID_hen_data <- function(data_path){
   OWID_hen_data <- read_csv("data/raw/OWID_hen_data.csv") |>
     rename(percentage_cage_free = share_of_hens_cage_free) |>
