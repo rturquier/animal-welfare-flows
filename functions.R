@@ -395,7 +395,7 @@ combine_hen_housing_data_sources <- function(
 ){
   combined_hen_df <- bind_rows(   # The order matters here:
     manual_cage_shares_df,  # manually populated values are preferred
-    EU_hen_df,              # over EU commision data,
+    EU_hen_df,              # over EU commission data,
     WFI_hens_df,            # WFI data provides values for non-EU countries,
     OWID_hen_df             # and OWID data is a fallback.
   ) |>
