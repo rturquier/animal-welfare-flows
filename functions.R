@@ -190,6 +190,7 @@ please_download_CIWF_report <- function(pdf_path){
 }
 
 # Wrangling ---------------------------------------------------------------
+# ------- Hen housing shares -------
 complete_with_dashboard_data <- function(EU_hen_df){
   #' Add data copied from individual dashboard PDFs
   #'
@@ -288,6 +289,23 @@ prepare_OWID_hen_data <- function(data_path){
   return(OWID_hen_data)
 }
 
+fix_Belgium_and_Poland_2014 <- function(EU_hen_df){
+  #' Replace Belgium and Poland 2014 with NAs
+  #'
+  #' For Belgium and Poland, 2014 is nearly identical to 2013, but with `barn`
+  #' and `free_range` swapped. This is very probably a mistake.
+  be_2014_row <- which(EU_hen_df$country == "Belgium"
+                       & EU_hen_df$year == 2014)
+  pl_2014_row <- which(EU_hen_df$country == "Poland"
+                       & EU_hen_df$year == 2014)
+  all_columns_except_country_and_year <- EU_hen_df |>
+    colnames() |>
+    tail(-2)
+  EU_hen_df[be_2014_row, all_columns_except_country_and_year] <- NA
+  EU_hen_df[pl_2014_row, all_columns_except_country_and_year] <- NA
+  return(EU_hen_df)
+}
+
 prepare_EU_hen_df <- function(EU_hen_path){
   hen_housing_numbers <- read_excel(
     EU_hen_path,
@@ -318,23 +336,6 @@ prepare_EU_hen_df <- function(EU_hen_path){
                               share_battery)
     ) |>
     fix_Belgium_and_Poland_2014()
-  return(EU_hen_df)
-}
-
-fix_Belgium_and_Poland_2014 <- function(EU_hen_df){
-  #' Replace Belgium and Poland 2014 with NAs
-  #'
-  #' For Belgium and Poland, 2014 is nearly identical to 2013, but with `barn`
-  #' and `free_range` swapped. This is very probably a mistake.
-  be_2014_row <- which(EU_hen_df$country == "Belgium"
-                       & EU_hen_df$year == 2014)
-  pl_2014_row <- which(EU_hen_df$country == "Poland"
-                       & EU_hen_df$year == 2014)
-  all_columns_except_country_and_year <- EU_hen_df |>
-    colnames() |>
-    tail(-2)
-  EU_hen_df[be_2014_row, all_columns_except_country_and_year] <- NA
-  EU_hen_df[pl_2014_row, all_columns_except_country_and_year] <- NA
   return(EU_hen_df)
 }
 
@@ -462,6 +463,7 @@ prepare_hen_df <- function(){
   return(hen_df)
 }
 
+# ------- FAO data -------
 convert_FAO_units <- function(FAO_df){
   converted_FAO_df <- FAO_df |>
     mutate(
@@ -974,6 +976,7 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
   return(adjusted_ADG_df)
 }
 
+# ------- Hen housing + trade data -------
 prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
   egg_production_df <- production_df |>
     filter(animal == "hens") |>
@@ -1029,6 +1032,7 @@ plot_cage_and_import_shares <- function(EU_egg_trade_df, country){
   return(cage_and_import_shares_plot)
 }
 
+# ------- Other -------
 extract_ciwf_cage_data <- function() {
   pdf_path <- "data/raw/ciwf_cage-age_report_oct-20_english_final.pdf"
   please_download_CIWF_report(pdf_path)
