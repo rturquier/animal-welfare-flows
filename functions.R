@@ -406,45 +406,65 @@ combine_hen_housing_data_sources <- function(
   return(combined_hen_df)
 }
 
+fill_missing_housing_shares_rowise <- function(combined_hen_df){
+  # Fill free range, barn and organic shares as 1 - the sum of other shares
+  rowise_filled_hen_df <- combined_hen_df |>
+    rowwise() |>
+    mutate(
+      share_free_range = if_else(
+        is.na(share_free_range) & !is.na(share_battery),
+        1 - sum(c_across(share_battery:share_organic), na.rm = TRUE),
+        share_free_range
+      ),
+      share_barn = if_else(
+        is.na(share_barn) & !is.na(share_free_range),
+        1 - sum(c_across(share_battery:share_organic), na.rm = TRUE),
+        share_barn
+      ),
+      share_organic = if_else(
+        is.na(share_organic) & !is.na(share_barn),
+        1 - sum(c_across(share_battery:share_organic), na.rm = TRUE),
+        share_organic
+      )
+    ) |>
+    ungroup()
+  return(rowise_filled_hen_df)
+}
+
+nanpapiwilelukinmi <- rowise_filled_hen_df |>
+  filter(
+    !if_all(share_battery:share_organic, is.na),
+    if_any(share_battery:share_organic, is.na)
+  )
+
+
+
 impute_missing_hen_housing_data <- function(combined_hen_df){
   year_range <- min(combined_hen_df$year):max(combined_hen_df$year)
   latest_year_in_EU_data <-
     combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> max()
+  earliest_year_in_EU_data <-
+    combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> min()
 
   completed_df <- combined_hen_df |>
+    fill_missing_housing_shares_rowise() |>
+    filter(!if_all(share_battery:share_organic, is.na)) |>
+    mutate(hen_housing_shares_imputed = FALSE) |>
     group_by(country) |>
     complete(year = year_range) |>
-    mutate(imputed_shares = if_else(if_all(share_cage:share_organic, is.na),
-                                    TRUE,
-                                    FALSE)) |>
+    mutate(hen_housing_shares_imputed = replace_na(hen_housing_shares_imputed, TRUE)) |>
     mutate(
       share_cage = coalesce(share_cage, share_battery + share_enriched),
       share_cage = na.fill(share_cage, c("extend", NA, "extend")),
       share_cage = na.fill(share_cage, "extend"),
     ) |>
     split_cages_between_conventional_and_enriched() |>
-    rowwise() |>
-    mutate(
-      # Fill free range, barn and organic shares as 1 - the sum of other shares
-      share_free_range = if_else(is.na(share_free_range) & !is.na(share_cage),
-                                 1 - sum(c_across(share_battery:share_organic),
-                                         na.rm = TRUE),
-                                 share_free_range),
-      share_barn = if_else(is.na(share_barn) & !is.na(share_cage),
-                           1 - sum(c_across(share_battery:share_organic),
-                                   na.rm = TRUE),
-                           share_barn),
-      share_organic = if_else(is.na(share_organic) & !is.na(share_cage),
-                              1 - sum(c_across(share_battery:share_organic),
-                                      na.rm = TRUE),
-                              share_organic)
-    ) |>
     group_by(country) |>
     mutate(
       across(starts_with("share_"), \(x) na.fill(x, c("extend", NA, "extend"))),
       across(starts_with("share_"), \(x) na.fill(x, "extend"))
     ) |>
-    filter(year <= latest_year_in_EU_data)
+    filter(year %in% earliest_year_in_EU_data:latest_year_in_EU_data)
 
   return(completed_df)
 }
