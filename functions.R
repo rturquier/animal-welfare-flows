@@ -233,6 +233,7 @@ convert_percentage_string_to_numeric_share <- function(string){
 normalize_WFI_country_names <- function(country_names) {
   WFI_typos <- c(
     "Kyrkystan" = "Kyrgyzstan",
+    "Kyrgystan" = "Kyrgyzstan",
     "Morrocco" = "Morocco",
     "Philipines" = "Philippines",
     "Taijikistan" = "Tajikistan"
@@ -241,8 +242,7 @@ normalize_WFI_country_names <- function(country_names) {
     country_names,
     origin = "country.name.en",
     destination = "country.name.en",
-    custom_match = WFI_typos,
-    nomatch = NULL # keep the original country name if there's no match
+    custom_match = WFI_typos
   )
   return(normalized_country_names)
 }
