@@ -206,14 +206,18 @@ EU_hen_df |> plot_housing_shares("Czechia")
 # Map housing shares in a given year --------------------------------------
 map_hen_housing(EU_hen_df, year=2024)
 
+# Read global hen housing data --------------------------------------------
+hen_df <- prepare_hen_df()
+
 # Compare imports and share of cages --------------------------------------
-EU_egg_trade_df <- prepare_EU_egg_trade_df(production_df, FAO_trade_matrix)
+EU_egg_trade_df <- prepare_EU_egg_trade_df(
+  production_df,
+  FAO_trade_matrix,
+  hen_df
+)
 
 # Plot --------------------------------------------------------------------
 EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
-
-# Read global hen housing data --------------------------------------------
-hen_df <- prepare_hen_df()
 
 # Get largest EU trade partners -----
 top_EU_partners <- FAO_trade_matrix |>

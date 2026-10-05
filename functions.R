@@ -408,7 +408,8 @@ combine_hen_housing_data_sources <- function(
 
 impute_missing_hen_housing_data <- function(combined_hen_df){
   year_range <- min(combined_hen_df$year):max(combined_hen_df$year)
-  latest_year_in_EU_data <- max(EU_hen_df$year)
+  latest_year_in_EU_data <-
+    combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> max()
 
   completed_df <- combined_hen_df |>
     group_by(country) |>
