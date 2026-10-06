@@ -980,7 +980,8 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
 prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
   egg_production_df <- production_df |>
     filter(animal == "hens") |>
-    select(country, year, n_eggs, production_kg)
+    select(country, year, production = n_eggs, production_kg) |>
+    mutate(item = "Hen eggs in shell, fresh")
 
   egg_trade_df <- FAO_trade_matrix |>
     filter(
@@ -994,12 +995,10 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
       .groups = "drop"
     ) |>
     left_join(hen_df, by = c("country", "year")) |>
-    left_join(egg_production_df, by = c("country", "year")) |>
-    rename(production = n_eggs) |>
+    left_join(egg_production_df, by = c("country", "year", "item")) |>
     relocate(production, production_kg, .before = imports) |>
     group_by(country, item) |>
     mutate(
-      production = if_else(item == "Hen eggs in shell, fresh", production, NA),
       apparent_consumption = production - exports + imports,
       imports_share = imports / apparent_consumption,
       share_cage = share_enriched + replace_na(share_battery, 0),
