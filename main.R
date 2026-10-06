@@ -42,7 +42,7 @@ raw_FAO_trade_matrix <- read_rds(FAO_trade_matrix_path)
 download_and_prepare_BACI_data("data/raw/BACI.rds")
 BACI_df <- read_rds("data/raw/BACI.rds")
 
-# Scope -------------------------------------------------------------------
+# Wrangle production data -------------------------------------------------
 scope <- list(
   'items' = c(
     "Chickens",
@@ -57,7 +57,6 @@ scope <- list(
   )
 )
 
-# Wrangle production data -------------------------------------------------
 production_df <- prepare_production_df(raw_production_df, scope)
 
 # Quick scatter plot of the two proxies ------------------------------------
