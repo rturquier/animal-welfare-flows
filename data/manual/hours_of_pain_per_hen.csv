@@ -1,0 +1,13 @@
+pain_type, housing_type, central_estimate, lower_bound_of_95p_CI, higher_bound_of_95p_CI
+excruciating, conventional,0.05,0.03,0.07
+excruciating, furnished,0.04,0.018,0.058
+excruciating, cage-free aviary,0.04,0.02,0.06
+disabling, conventional,431.41,354.1,508.8
+disabling, furnished,154.64,98.8,210.5
+disabling, cage-free aviary,156.04,100.2,211.9
+hurtful, conventional,4054.47,3265,4844
+hurtful, furnished,3151.39,2444,3859
+hurtful, cage-free aviary,1741.92,991,2492
+annoying, conventional,6721.17,5615,7827
+annoying, furnished,6141.89,5090,7194
+annoying, cage-free aviary,2076.79,1197,2956
