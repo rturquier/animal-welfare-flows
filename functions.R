@@ -195,7 +195,7 @@ complete_with_dashboard_data <- function(EU_hen_df){
   #' Add data copied from individual dashboard PDFs
   #'
   #' At time of coding, this function only adds one row (France, 2024).
-  egg_dashboard_df <- read_csv("data/EU_eggs_dashboards.csv") |>
+  egg_dashboard_df <- read_csv("data/manual/EU_eggs_dashboards.csv") |>
     mutate(country = countrycode(country, "eurostat", "country.name.en")) |>
     mutate(across(starts_with("percentage"),
                   ~ . / 100,
@@ -348,7 +348,7 @@ share_of_remaining_batteries <- function(year, ban_year){
 }
 
 split_cages_between_conventional_and_enriched <- function(hen_df){
-  battery_ban_df <- read_csv("data/battery_bans.csv") |>
+  battery_ban_df <- read_csv("data/manual/battery_bans.csv") |>
     select(country, year_of_battery_ban)
 
   hen_df_with_cage_split <- hen_df |>
@@ -444,7 +444,7 @@ impute_missing_hen_housing_data <- function(combined_hen_df){
 }
 
 prepare_hen_df <- function(){
-  manual_cage_shares_df <- read_csv("data/manual_cage_shares.csv")
+  manual_cage_shares_df <- read_csv("data/manual/cage_shares.csv")
 
   EU_hen_path <- "data/raw/laying-hens-by-way-of-keeping-2011-2025_en.xlsx"
   download_EU_hen_data(EU_hen_path)

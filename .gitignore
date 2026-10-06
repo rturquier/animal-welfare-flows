@@ -1,6 +1,12 @@
 # --- Project-specific files ---
-# Data and figures
-data/
+# Data: track manually-collated csv files, ignore the rest
+# (ignore everything in /data the "manual" folder...)
+data/*
+!data/manual/
+# (...then ignore everything in that folder except csv files.)
+data/manual/*
+!data/manual/*.csv
+
 figures/
 
 # --- MacOS ---
