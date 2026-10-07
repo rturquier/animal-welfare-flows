@@ -977,6 +977,36 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
 }
 
 # ------- Hen housing + trade data -------
+compute_egg_consumption_by_housing_system <- function(egg_trade_df){
+  egg_trade_df |>
+    group_by(country, item) |>
+    mutate(
+      consumption = production - exports + imports,
+      imports_share = imports / consumption,
+
+      production_battery = share_battery_country * production,
+      production_enriched = share_enriched_country * production,
+      production_free_range = share_free_range_country * production,
+      production_organic = share_organic_country * production,
+
+      exports_battery = share_battery_country * exports,
+      exports_enriched = share_enriched_country * exports,
+      exports_free_range = share_free_range_country * exports,
+      exports_organic = share_organic_country * exports,
+
+      net_exports_battery = exports_battery - imports_battery,
+      net_exports_enriched = exports_enriched - imports_enriched,
+      net_exports_free_range = exports_free_range - imports_free_range,
+      net_exports_organic = exports_organic - imports_organic,
+
+      consumption_battery = production_battery - net_exports_battery,
+      consumption_enriched = production_enriched - net_exports_enriched,
+      consumption_free_range = production_free_range - net_exports_free_range,
+      consumption_organic = production_organic - net_exports_organic,
+    ) |>
+    ungroup()
+}
+
 prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
   egg_production_df <- production_df |>
     filter(animal == "hens") |>
@@ -1006,31 +1036,8 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
       .groups = "drop"
     ) |>
     relocate(production, production_kg, .before = imports) |>
-    group_by(country, item) |>
-    mutate(
-      apparent_consumption = production - exports + imports,
-      imports_share = imports / apparent_consumption,
+    compute_egg_consumption_by_housing_system()
 
-      production_battery = share_battery_country * production,
-      production_enriched = share_enriched_country * production,
-      production_free_range = share_free_range_country * production,
-      production_organic = share_organic_country * production,
-
-      exports_battery = share_battery_country * exports,
-      exports_enriched = share_enriched_country * exports,
-      exports_free_range = share_free_range_country * exports,
-      exports_organic = share_organic_country * exports,
-
-      net_exports_battery = exports_battery - imports_battery,
-      net_exports_enriched = exports_enriched - imports_enriched,
-      net_exports_free_range = exports_free_range - imports_free_range,
-      net_exports_organic = exports_organic - imports_organic,
-
-      consumption_battery = production_battery - net_exports_battery,
-      consumption_enriched = production_enriched - net_exports_enriched,
-      consumption_free_range = production_free_range - net_exports_free_range,
-      consumption_organic = production_organic - net_exports_organic,
-    )
   return(egg_trade_df)
 }
 
