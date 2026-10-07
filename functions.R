@@ -978,33 +978,27 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
 
 # ------- Hen housing + trade data -------
 compute_egg_consumption_by_housing_system <- function(egg_trade_df){
-  egg_trade_df |>
-    group_by(country, item) |>
-    mutate(
-      consumption = production - exports + imports,
-      imports_share = imports / consumption,
+  any_housing_type <- "(battery|enriched|barn|free_range|organic)"
 
-      production_battery = share_battery_country * production,
-      production_enriched = share_enriched_country * production,
-      production_free_range = share_free_range_country * production,
-      production_organic = share_organic_country * production,
-
-      exports_battery = share_battery_country * exports,
-      exports_enriched = share_enriched_country * exports,
-      exports_free_range = share_free_range_country * exports,
-      exports_organic = share_organic_country * exports,
-
-      net_exports_battery = exports_battery - imports_battery,
-      net_exports_enriched = exports_enriched - imports_enriched,
-      net_exports_free_range = exports_free_range - imports_free_range,
-      net_exports_organic = exports_organic - imports_organic,
-
-      consumption_battery = production_battery - net_exports_battery,
-      consumption_enriched = production_enriched - net_exports_enriched,
-      consumption_free_range = production_free_range - net_exports_free_range,
-      consumption_organic = production_organic - net_exports_organic,
+  longer_egg_trade_df <- egg_trade_df  |>
+    rename_with(\(x) str_remove(x, "_country$")) |>
+    pivot_longer(
+      matches(glue("_{any_housing_type}$")),
+      names_to = c("variable_name", "housing_type"),
+      names_sep = glue("_(?={any_housing_type})"),
+      values_to = "n_eggs"
     ) |>
-    ungroup()
+    rename_with(\(x) glue("{x}_total"),
+                c(production, consumption, imports, exports)) |>
+    pivot_wider(names_from = "variable_name", values_from = "n_eggs") |>
+    rename(n_hens_total = n_hens, n_hens = n) |>
+    mutate(
+      production = production_total * share,
+      exports = exports_total * share,
+      production_not_exported = production - exports,
+      consumption = production_not_exported + imports,
+    )
+  return(longer_egg_trade_df)
 }
 
 prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
@@ -1035,10 +1029,17 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
       across(c(production, production_kg), unique),
       .groups = "drop"
     ) |>
-    relocate(production, production_kg, imports, exports,
-             .before = imports_battery) |>
-    compute_egg_consumption_by_housing_system()
-
+    mutate(
+      consumption = production - exports + imports,
+      imports_share = imports / consumption,
+    ) |>
+    compute_egg_consumption_by_housing_system() |>
+    select(
+      country, year, item, housing_type,
+      share, production, imports, exports,
+      production_not_exported, consumption,
+      unit
+    )
   return(egg_trade_df)
 }
 
@@ -1211,20 +1212,7 @@ plot_production_and_trade_by_system <- function(egg_trade_df, country, year) {
       country == .env$country,
       year == .env$year
     ) |>
-    mutate(
-      across(starts_with("exports_"), \(x) -x),  # To show exports below x-axis
-    ) |>
-    pivot_longer(
-      matches(glue("_{any_housing_type}$")),
-      names_to = c("variable_name", "housing_type"),
-      names_sep = glue("_(?={any_housing_type})"),
-      values_to = "n_eggs"
-    ) |>
-    rename_with(\(x) glue("{x}_total"),
-                c(production, consumption, imports, exports)) |>
-    pivot_wider(names_from = "variable_name", values_from = "n_eggs") |>
-    mutate(production_not_exported = production - exports) |>
-    select(-c(consumption, net_exports)) |>
+    mutate(exports = -exports) |>  # To show exports below x-axis
     pivot_longer(
       c(imports, exports, production_not_exported),
       names_to = "variable_name",
