@@ -1028,14 +1028,15 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
       imports_enriched = sum(imports * share_enriched_partner, na.rm = TRUE),
       imports_free_range = sum(imports * share_free_range_partner, na.rm=TRUE),
       imports_organic = sum(imports * share_organic_partner, na.rm = TRUE),
-      exports = sum(exports),
       imports = sum(imports),
+      exports = sum(exports),
       unit = unique(unit),
       across(ends_with("_country"), unique),
       across(c(production, production_kg), unique),
       .groups = "drop"
     ) |>
-    relocate(production, production_kg, .before = imports) |>
+    relocate(production, production_kg, imports, exports,
+             .before = imports_battery) |>
     compute_egg_consumption_by_housing_system()
 
   return(egg_trade_df)
@@ -1200,6 +1201,40 @@ map_hen_housing <- function(hen_df, year = NULL){
   ggplot()
   return(hen_housing_map)
 }
+
+plot_production_and_trade_by_system <- function(egg_trade_df, country, year) {
+  any_housing_type <- "(battery|enriched|barn|free_range|organic)"
+
+  egg_trade_df |>
+    filter(
+      item == "Hen eggs in shell, fresh",
+      country == .env$country,
+      year == .env$year
+    ) |>
+    mutate(
+      across(starts_with("exports_"), \(x) -x),  # To show exports below x-axis
+    ) |>
+    pivot_longer(
+      matches(glue("_{any_housing_type}$")),
+      names_to = c("variable_name", "housing_type"),
+      names_sep = glue("_(?={any_housing_type})"),
+      values_to = "n_eggs"
+    ) |>
+    rename_with(\(x) glue("{x}_total"),
+                c(production, consumption, imports, exports)) |>
+    pivot_wider(names_from = "variable_name", values_from = "n_eggs") |>
+    mutate(production_not_exported = production - exports) |>
+    select(-c(consumption, net_exports)) |>
+    pivot_longer(
+      c(imports, exports, production_not_exported),
+      names_to = "variable_name",
+      values_to = "n_eggs"
+    ) |>
+    ggplot(aes(fill=variable_name, y=n_eggs, x=housing_type)) +
+    geom_bar(position="stack", stat="identity") +
+    theme_minimal()
+}
+
 
 map_net_exports <- function(
     FAO_trade_df,

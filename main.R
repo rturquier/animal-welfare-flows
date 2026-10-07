@@ -217,20 +217,12 @@ egg_trade_df <- prepare_egg_trade_df(
   hen_df
 )
 
-# Plot --------------------------------------------------------------------
-EU_egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
+# Plot production, imports and exports by housing system -----------------
+egg_trade_df |> plot_production_and_trade_by_system("Germany", "2024")
 
-# Get largest EU trade partners -----
-top_EU_partners <- FAO_trade_matrix |>
-  filter(
-    item == "Hen eggs in shell, fresh",
-    country %in% EU_27,
-  ) |>
-  group_by(year, partner) |>
-  summarise(imports = sum(imports), exports = sum(exports)) |>
-  filter(!(partner) %in% c(EU_27, "Belgium-Luxembourg")) |>
-  arrange(desc(imports)) |>
-  top_n(10, imports)
+# Plot evolution of cage and import shares -------------------------------
+# Plot to be fixed
+# egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
 
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()
