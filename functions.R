@@ -1020,6 +1020,7 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
     summarise(
       imports_battery = sum(imports * share_battery_partner, na.rm = TRUE),
       imports_enriched = sum(imports * share_enriched_partner, na.rm = TRUE),
+      imports_barn = sum(imports * share_barn_partner, na.rm = TRUE),
       imports_free_range = sum(imports * share_free_range_partner, na.rm=TRUE),
       imports_organic = sum(imports * share_organic_partner, na.rm = TRUE),
       imports = sum(imports),
@@ -1222,7 +1223,6 @@ plot_production_and_trade_by_system <- function(egg_trade_df, country, year) {
     geom_bar(position="stack", stat="identity") +
     theme_minimal()
 }
-
 
 map_net_exports <- function(
     FAO_trade_df,
