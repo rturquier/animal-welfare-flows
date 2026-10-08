@@ -977,7 +977,8 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
 }
 
 # ------- Hen housing + trade data -------
-compute_egg_consumption_by_housing_system <- function(egg_trade_df){
+make_egg_trade_df_longer <- function(egg_trade_df){
+  housing_levels <- c("battery", "enriched", "barn", "free_range", "organic")
   any_housing_type <- "(battery|enriched|barn|free_range|organic)"
 
   longer_egg_trade_df <- egg_trade_df  |>
@@ -992,13 +993,27 @@ compute_egg_consumption_by_housing_system <- function(egg_trade_df){
                 c(production, consumption, imports, exports)) |>
     pivot_wider(names_from = "variable_name", values_from = "n_eggs") |>
     rename(n_hens_total = n_hens, n_hens = n) |>
-    mutate(
-      production = production_total * share,
-      exports = exports_total * share,
-      production_not_exported = production - exports,
-      consumption = production_not_exported + imports,
-    )
+    mutate(housing_type = factor(housing_type, levels = housing_levels))
+
   return(longer_egg_trade_df)
+}
+
+aggregate_egg_trade <- function(egg_trade_df){
+  egg_trade_df |>
+    group_by(country, year, item) |>
+    summarise(
+      imports_battery = sum(imports * share_battery_partner, na.rm = TRUE),
+      imports_enriched = sum(imports * share_enriched_partner, na.rm = TRUE),
+      imports_barn = sum(imports * share_barn_partner, na.rm = TRUE),
+      imports_free_range = sum(imports * share_free_range_partner, na.rm=TRUE),
+      imports_organic = sum(imports * share_organic_partner, na.rm = TRUE),
+      imports = sum(imports),
+      exports = sum(exports),
+      unit = unique(unit),
+      across(ends_with("_country"), unique),
+      across(c(production, production_kg), unique),
+      .groups = "drop"
+  )
 }
 
 prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
@@ -1016,25 +1031,18 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
               by = join_by(partner == country, year),
               suffix = c("_country", "_partner")) |>
     left_join(egg_production_df, by = c("country", "year", "item")) |>
-    group_by(country, year, item) |>
-    summarise(
-      imports_battery = sum(imports * share_battery_partner, na.rm = TRUE),
-      imports_enriched = sum(imports * share_enriched_partner, na.rm = TRUE),
-      imports_barn = sum(imports * share_barn_partner, na.rm = TRUE),
-      imports_free_range = sum(imports * share_free_range_partner, na.rm=TRUE),
-      imports_organic = sum(imports * share_organic_partner, na.rm = TRUE),
-      imports = sum(imports),
-      exports = sum(exports),
-      unit = unique(unit),
-      across(ends_with("_country"), unique),
-      across(c(production, production_kg), unique),
-      .groups = "drop"
-    ) |>
+    aggregate_egg_trade() |>
     mutate(
       consumption = production - exports + imports,
       imports_share = imports / consumption,
     ) |>
-    compute_egg_consumption_by_housing_system() |>
+    make_egg_trade_df_longer() |>
+    mutate(
+      production = production_total * share,
+      exports = exports_total * share,
+      production_not_exported = production - exports,
+      consumption = production_not_exported + imports,
+    ) |>
     select(
       country, year, item, housing_type,
       share, production, imports, exports,
