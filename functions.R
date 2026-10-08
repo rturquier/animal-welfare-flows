@@ -1040,8 +1040,51 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
       share, production, imports, exports,
       production_not_exported, consumption,
       unit
-    )
+    ) |>
+    filter(country %in% EU_27, year >= 2011)
   return(egg_trade_df)
+}
+
+read_WFI_pain_per_hen_data <- function(){
+  #' @gautron2021 :
+  #' > "Many flocks already produce close to 500 eggs per hens in a lifetime"
+  eggs_per_hen <- 500  # Assume 500 eggs per hen
+
+  pain_levels <- c("annoying", "hurtful", "disabling", "excruciating")
+
+  hours_of_pain_per_hen_df <-
+    read_csv("data/manual/hours_of_pain_per_hen.csv") |>
+    rename(pain_per_hen = central_estimate) |>
+    mutate(
+      pain_type = factor(pain_type, levels = pain_levels),
+      housing_type = case_match(housing_type,
+                                "conventional" ~ "battery",
+                                "furnished" ~ "enriched",
+                                "cage-free aviary" ~ "barn"),
+      pain_per_egg = pain_per_hen / .env$eggs_per_hen
+    )
+  return(hours_of_pain_per_hen_df)
+}
+
+prepare_egg_pain_df <- function(egg_trade_df){
+  hours_of_pain_per_hen_df <- read_WFI_pain_per_hen_data()
+
+  egg_pain_df <- egg_trade_df |>
+    left_join(
+      hours_of_pain_per_hen_df,
+      by = "housing_type",
+      relationship = "many-to-many"
+    ) |>
+    mutate(
+      pain_produced = pain_per_egg * production,
+      pain_consumed = pain_per_egg * consumption,
+      pain_imported = pain_per_egg * imports,
+      pain_exported = pain_per_egg * exports,
+    ) |>
+    group_by(country, year, item, pain_type) |>
+    summarise(across(matches("pain_......ed"), sum))
+
+  return(egg_pain_df)
 }
 
 plot_cage_and_import_shares <- function(EU_egg_trade_df, country){

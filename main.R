@@ -217,6 +217,9 @@ egg_trade_df <- prepare_egg_trade_df(
   hen_df
 )
 
+# Convert eggs to pain ----------------------------------------------------
+egg_pain_df <- prepare_egg_pain_df(egg_trade_df)
+
 # Plot production, imports and exports by housing system -----------------
 egg_trade_df |> plot_production_and_trade_by_system("Germany", "2024")
 
