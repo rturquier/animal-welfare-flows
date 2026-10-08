@@ -1270,8 +1270,21 @@ plot_production_and_trade_by_system <- function(egg_trade_df, country, year) {
       names_to = "variable_name",
       values_to = "n_eggs"
     ) |>
+    mutate(variable_name = factor(variable_name,
+                                  levels = c("imports",
+                                             "production_not_exported",
+                                             "exports")   )) |>
     ggplot(aes(fill=variable_name, y=n_eggs, x=housing_type)) +
     geom_bar(position="stack", stat="identity") +
+    scale_fill_manual(
+      name = NULL,
+      values = c("#E92", "#0F5E89", "#1894D8")
+    ) +
+    labs(
+      x = "Housing type",
+      y = "Number of eggs",
+      title = glue("Number of eggs produced and traded in {country}, {year}")
+    ) +
     theme_minimal()
 }
 

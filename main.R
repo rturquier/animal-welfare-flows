@@ -223,7 +223,6 @@ egg_trade_df |> plot_production_and_trade_by_system("Germany", "2024")
 # Convert eggs to pain ----------------------------------------------------
 egg_pain_df <- prepare_egg_pain_df(egg_trade_df)
 
-
 # Plot evolution of cage and import shares -------------------------------
 # Plot to be fixed
 # egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
