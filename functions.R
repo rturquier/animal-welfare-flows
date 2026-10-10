@@ -1255,7 +1255,7 @@ map_hen_housing <- function(hen_df, year = NULL){
   return(hen_housing_map)
 }
 
-plot_production_and_trade_by_system <- function(egg_trade_df, country, year) {
+plot_apparent_consumption_by_system <- function(egg_trade_df, country, year){
   any_housing_type <- "(battery|enriched|barn|free_range|organic)"
 
   egg_trade_df |>
@@ -1283,7 +1283,7 @@ plot_production_and_trade_by_system <- function(egg_trade_df, country, year) {
     labs(
       x = "Housing type",
       y = "Number of eggs",
-      title = glue("Number of eggs produced and traded in {country}, {year}")
+      title = glue("Apparent consumption of eggs in {country}, {year}")
     ) +
     theme_minimal()
 }
