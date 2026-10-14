@@ -1053,7 +1053,7 @@ prepare_egg_trade_df <- function(production_df, FAO_trade_matrix, hen_df){
   return(egg_trade_df)
 }
 
-read_WFI_pain_per_hen_data <- function(){
+prepare_WFI_pain_per_hen_data <- function(){
   #' @gautron2021 :
   #' > "Many flocks already produce close to 500 eggs per hens in a lifetime"
   eggs_per_hen <- 500  # Assume 500 eggs per hen
@@ -1062,20 +1062,25 @@ read_WFI_pain_per_hen_data <- function(){
 
   hours_of_pain_per_hen_df <-
     read_csv("data/manual/hours_of_pain_per_hen.csv") |>
-    rename(pain_per_hen = central_estimate) |>
+    pivot_longer(
+      c(central_estimate, lower_bound_of_95p_CI, higher_bound_of_95p_CI),
+      names_to = "value_type",
+      values_to = "pain_per_hen"
+    ) |>
     mutate(
       pain_type = factor(pain_type, levels = pain_levels),
       housing_type = case_match(housing_type,
                                 "conventional" ~ "battery",
                                 "furnished" ~ "enriched",
                                 "cage-free aviary" ~ "barn"),
+      pain_per_hen = duration(pain_per_hen, units = "hours"),
       pain_per_egg = pain_per_hen / .env$eggs_per_hen
     )
   return(hours_of_pain_per_hen_df)
 }
 
 prepare_egg_pain_df <- function(egg_trade_df){
-  hours_of_pain_per_hen_df <- read_WFI_pain_per_hen_data()
+  hours_of_pain_per_hen_df <- prepare_WFI_pain_per_hen_data()
 
   egg_pain_df <- egg_trade_df |>
     left_join(
@@ -1089,8 +1094,9 @@ prepare_egg_pain_df <- function(egg_trade_df){
       pain_imported = pain_per_egg * imports,
       pain_exported = pain_per_egg * exports,
     ) |>
-    group_by(country, year, item, pain_type) |>
-    summarise(across(matches("pain_......ed"), sum))
+    group_by(country, year, item, pain_type, value_type) |>
+    summarise(across(matches("pain_......ed"), sum)) |>
+    mutate(across(matches("pain_......ed"), as.duration))
 
   return(egg_pain_df)
 }
