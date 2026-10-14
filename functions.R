@@ -1083,6 +1083,7 @@ prepare_egg_pain_df <- function(egg_trade_df){
   hours_of_pain_per_hen_df <- prepare_WFI_pain_per_hen_data()
 
   egg_pain_df <- egg_trade_df |>
+    semi_join(hours_of_pain_per_hen_df, by = "housing_type") |>
     left_join(
       hours_of_pain_per_hen_df,
       by = "housing_type",
@@ -1094,8 +1095,8 @@ prepare_egg_pain_df <- function(egg_trade_df){
       pain_imported = pain_per_egg * imports,
       pain_exported = pain_per_egg * exports,
     ) |>
-    group_by(country, year, item, pain_type, value_type) |>
-    summarise(across(matches("pain_......ed"), sum)) |>
+    group_by(country, year, pain_type, value_type) |>
+    summarise(across(matches("pain_......ed"), \(x) sum(x, na.rm = TRUE))) |>
     mutate(across(matches("pain_......ed"), as.duration))
 
   return(egg_pain_df)
@@ -1431,4 +1432,38 @@ plot_ADG_evolution <- function(adjusted_ADG_df, country){
     theme_minimal()
 
   return(ADG_evolution)
+}
+
+plot_imported_pain_by_type <- function(egg_pain_df, country, year){
+  pain_plot_df <- egg_pain_df |>
+    filter(country == .env$country, year == .env$year) |>
+    mutate(across(matches("pain_......ed"),
+                  \(x) as.numeric(x, units = "years") )) |>
+    pivot_wider(
+      names_from = value_type,
+      values_from = matches("pain_......ed")
+    )
+
+  pain_plot <- pain_plot_df |>
+    ggplot(aes(y = pain_type)) +
+    geom_pointrange(
+      aes(
+        x = pain_imported_central_estimate,
+        xmin = pain_imported_lower_bound_of_95p_CI,
+        xmax = pain_imported_higher_bound_of_95p_CI
+      )
+    ) +
+    scale_x_log10(
+      breaks = 10^(1:6),
+      minor_breaks = c(outer(1:9, 10^(0:9))),  # 1, 2, 3, …, 9, 10, 20, 30 …
+      labels = scales::label_log(),
+      limits = c(1, NA),
+    ) +
+    labs(
+      x = glue("years of pain by type imported in {country} in {year}"),
+      y = "pain type"
+    ) +
+    theme_minimal()
+
+  return(pain_plot)
 }
