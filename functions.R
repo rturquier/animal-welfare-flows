@@ -1413,6 +1413,30 @@ plot_ADG_by_country <- function(
     theme(legend.position = "top")
 }
 
+scatterplot_ADG_by_country <- function(adjusted_ADG_df, year=2024){
+  adjusted_ADG_df |>
+    filter(year == .env$year, country != "Iceland") |>
+    ggplot() +
+    geom_point(
+      aes(
+        x = ADG,
+        y = partner_ADG,
+        size = n_consumed,
+        # color = share_of_imports_in_consumption > 0.1,
+      ),
+      alpha = 0.4,
+    ) +
+    geom_abline(alpha = 0.5) +
+    scale_x_continuous(limits = c(0, NA)) +
+    scale_y_continuous(limits = c(0, NA)) +
+    labs(
+      x="Average daily weight gain of chicken produced in the country (g/day)",
+      y="ADG of consumed chicken (g/day)"
+    ) +
+    guides(color = "none", size = "none") +
+    theme_minimal()
+}
+
 plot_ADG_evolution <- function(adjusted_ADG_df, country){
   country_name <- if_else(country == "EU_27", "the EU", country)
 
