@@ -241,8 +241,7 @@ egg_pain_df <- prepare_egg_pain_df(egg_trade_df)
 egg_pain_df |> plot_imported_pain_by_type("Spain", 2024)
 
 # Plot evolution of cage and import shares -------------------------------
-# Plot to be fixed
-# egg_trade_df |> plot_cage_and_import_shares(country = "Austria")
+egg_trade_df |> plot_cage_and_import_shares(country = "Sweden")
 
 # Extract cage data from CIWF 2020 report ----------------------------------
 ciwf_cage_df <- extract_ciwf_cage_data()

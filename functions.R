@@ -1102,28 +1102,43 @@ prepare_egg_pain_df <- function(egg_trade_df){
   return(egg_pain_df)
 }
 
-plot_cage_and_import_shares <- function(EU_egg_trade_df, country){
-  cage_and_import_shares_plot <- EU_egg_trade_df |>
-      filter(
-        year >= 2011,
-        item == "Hen eggs in shell, fresh",
-        country == .env$country
-      ) |>
-      ggplot(aes(x = year)) +
-        geom_line(aes(y = share_cage_base_100_2011, color = "cages")) +
-        geom_point(aes(y = share_cage_base_100_2011, color = "cages")) +
-        geom_line(aes(y = imports_share_base_100_2011, color = "imports")) +
-        geom_point(aes(y = imports_share_base_100_2011, color = "imports")) +
-        scale_color_manual(
-          name = NULL,
-          values = c("cages" = "#EE9922", "imports" = "#FFCC22")
-        ) +
-        labs(
-          y = "share",
-          title = glue("Share of cage egg production and share of imports",
-                       " in {country} (base 100 in 2011)")
-        ) +
-        theme_minimal()
+plot_cage_and_import_shares <- function(egg_trade_df, country){
+  cage_share_df <- egg_trade_df |>
+    filter(
+      year >= 2011,
+      item == "Hen eggs in shell, fresh",
+      country == .env$country
+    ) |>
+    mutate(
+      housing_type = case_match(as.character(housing_type),
+                                c("battery", "enriched") ~ "cage",
+                                c("barn", "free_range", "organic") ~ "cage_free",
+                                .default = as.character(housing_type))
+    ) |>
+    group_by(country, year, housing_type) |>
+    summarise(across(share:consumption, sum)) |>
+    pivot_wider(names_from = housing_type, values_from = share:consumption) |>
+    mutate(
+     imports_cage_share = imports_cage / (imports_cage + imports_cage_free),
+     imports_share = (imports_cage + imports_cage_free) / (consumption_cage / consumption_cage_free)
+    )
+
+  cage_and_import_shares_plot <- cage_share_df |>
+    ggplot(aes(x = year)) +
+      geom_line(aes(y = share_cage, color = "cages")) +
+      geom_point(aes(y = share_cage, color = "cages")) +
+      geom_line(aes(y = imports_share, color = "imports")) +
+      geom_point(aes(y = imports_share, color = "imports")) +
+      scale_color_manual(
+        name = NULL,
+        values = c("cages" = "#EE9922", "imports" = "#FFCC22")
+      ) +
+      labs(
+        y = "share",
+        title = glue("Share of cage egg production and share of imports",
+                     " in {country}")
+      ) +
+      theme_minimal()
   return(cage_and_import_shares_plot)
 }
 
