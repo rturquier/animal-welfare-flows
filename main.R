@@ -238,7 +238,11 @@ save_fig(glue("apparent_consumption_by_system_{country}_{year}.png"))
 egg_pain_df <- prepare_egg_pain_df(egg_trade_df)
 
 # Plot imported pain ------------------------------------------------------
-egg_pain_df |> plot_imported_pain_by_type("Spain", 2024)
+egg_pain_df |> plot_imported_pain_by_type("France", 2024)
+
+# Aggregate pain ----------------------------------------------------------
+pain_weights <- c(10^(-1), 1, 10^1, 10^2)
+equivalent_pain_df <- egg_pain_df |> aggregate_pain(pain_weights)
 
 # Plot evolution of cage and import shares -------------------------------
 egg_trade_df |> plot_cage_and_import_shares(country = "Sweden")
