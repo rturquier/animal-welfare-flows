@@ -39,8 +39,9 @@ raw_FAO_trade_df <- read_rds(FAO_trade_data_path)
 raw_FAO_trade_matrix <- read_rds(FAO_trade_matrix_path)
 
 # Download and prepare BACI data ------------------------------------------
-download_and_prepare_BACI_data("data/raw/BACI.rds")
-BACI_df <- read_rds("data/raw/BACI.rds")
+# (Not needed for now)
+# download_and_prepare_BACI_data("data/raw/BACI.rds")
+# BACI_df <- read_rds("data/raw/BACI.rds")
 
 # Wrangle production data -------------------------------------------------
 scope <- list(
