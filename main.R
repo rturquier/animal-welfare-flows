@@ -229,7 +229,10 @@ egg_trade_df <- prepare_egg_trade_df(
 )
 
 # Plot production, imports and exports by housing system -----------------
-egg_trade_df |> plot_apparent_consumption_by_system("Spain", "2024")
+country <- "Sweden"
+year <- 2024
+egg_trade_df |> plot_apparent_consumption_by_system(country, year)
+save_fig(glue("apparent_consumption_by_system_{country}_{year}.png"))
 
 # Convert eggs to pain ----------------------------------------------------
 egg_pain_df <- prepare_egg_pain_df(egg_trade_df)
