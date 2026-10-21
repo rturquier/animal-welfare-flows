@@ -1379,22 +1379,25 @@ map_ADG <- function(production_df, year = NULL) {
   return(ADG_map)
 }
 
-plot_adjusted_ADG <- function(adjusted_ADG_df, year=NULL, only_top_n=177){
+plot_ADG_by_country <- function(
+    adjusted_ADG_df, year=NULL, only_top_n=177, compare_to=adjusted_ADG
+){
   if(year |> is.null()) {year = max(production_df$year)}
+  compare_to = enexpr(compare_to)
 
   adjusted_ADG_df |>
     filter(year == .env$year, country != "Iceland") |>
     ungroup() |>
-    arrange(desc(adjusted_ADG)) |>
+    arrange(desc(!!compare_to)) |>
     slice_head(n = only_top_n) |>
     ggplot() +
     geom_segment(
-      aes(x = ADG, xend = adjusted_ADG, y =  reorder(country, adjusted_ADG)),
+      aes(x = ADG, xend = !!compare_to, y =  reorder(country, !!compare_to)),
       color = "#222", linewidth = 0.6
     ) +
     geom_point(aes(x = ADG, y = country, color = "ADG"), shape = 19) +
     geom_point(
-      aes(x = adjusted_ADG, y = country, color = "adjusted_ADG"),
+      aes(x = !!compare_to, y = country, color = "adjusted_ADG"),
       shape = 17
     ) +
     scale_color_manual(

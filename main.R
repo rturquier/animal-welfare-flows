@@ -94,8 +94,12 @@ save_fig("ADG.svg")
 adjusted_ADG_df <- adjust_ADG_for_trade_flows(production_df, FAO_trade_matrix)
 
 # Plot the difference -----------------------------------------------------
-adjusted_ADG_df |> plot_adjusted_ADG(year = 2024, only_top_n = 10)
+adjusted_ADG_df |> plot_ADG_by_country(year = 2024, only_top_n = 10)
 save_fig("adjusted_ADG_2024.png")
+
+# Compare to ADG of average imported chicken ------------------------------
+adjusted_ADG_df |>
+  plot_ADG_by_country(year = 2024, only_top_n = 30, compare_to=partner_ADG)
 
 # Plot both ADGs across time for a given country --------------------------
 adjusted_ADG_df |> plot_ADG_evolution(country = "EU_27")
