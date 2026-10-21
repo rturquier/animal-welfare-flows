@@ -1256,6 +1256,7 @@ map_hen_housing <- function(hen_df, year = NULL){
       show.limits = TRUE,
       # labels = \(x) glue(round(x * 100), " %")
     ) +
+    guides(color="none") +
     theme_void() +
     labs(fill = glue("Share of hens in cages in {year}"))
   ggplot()
