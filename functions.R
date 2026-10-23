@@ -1068,7 +1068,7 @@ prepare_WFI_pain_per_hen_data <- function(){
       values_to = "pain_per_hen"
     ) |>
     mutate(
-      pain_type = factor(pain_type, levels = pain_levels),
+      pain_level = factor(pain_level, levels = pain_levels),
       housing_type = case_match(housing_type,
                                 "conventional" ~ "battery",
                                 "furnished" ~ "enriched",
@@ -1095,7 +1095,7 @@ prepare_egg_pain_df <- function(egg_trade_df){
       pain_imported = pain_per_egg * imports,
       pain_exported = pain_per_egg * exports,
     ) |>
-    group_by(country, year, pain_type, value_type) |>
+    group_by(country, year, pain_level, value_type) |>
     summarise(across(matches("pain_......ed"), \(x) sum(x, na.rm = TRUE))) |>
     mutate(across(matches("pain_......ed"), as.duration))
 
@@ -1104,12 +1104,12 @@ prepare_egg_pain_df <- function(egg_trade_df){
 
 aggregate_pain <- function(pain_df, pain_weights){
   pain_weights_df <- tibble(
-    pain_type = egg_pain_df |> pull(pain_type) |> unique(),
+    pain_level = egg_pain_df |> pull(pain_level) |> unique(),
     pain_weight = pain_weights
   )
   equivalent_pain_df <- egg_pain_df |>
     group_by(country, year, value_type) |>
-    left_join(pain_weights_df, by = "pain_type") |>
+    left_join(pain_weights_df, by = "pain_level") |>
     summarise(across(matches("pain_......ed"),
                      \(x) sum(x * pain_weight) )) |>
     mutate(across(matches("pain_......ed"), as.duration))
@@ -1452,7 +1452,7 @@ plot_ADG_evolution <- function(adjusted_ADG_df, country){
   return(ADG_evolution)
 }
 
-plot_imported_pain_by_type <- function(egg_pain_df, country, year){
+plot_imported_pain_by_level <- function(egg_pain_df, country, year){
   pain_plot_df <- egg_pain_df |>
     filter(country == .env$country, year == .env$year) |>
     mutate(across(matches("pain_......ed"),
@@ -1463,7 +1463,7 @@ plot_imported_pain_by_type <- function(egg_pain_df, country, year){
     )
 
   pain_plot <- pain_plot_df |>
-    ggplot(aes(y = pain_type)) +
+    ggplot(aes(y = pain_level)) +
     geom_pointrange(
       aes(
         x = pain_imported_central_estimate,
@@ -1478,8 +1478,8 @@ plot_imported_pain_by_type <- function(egg_pain_df, country, year){
       limits = c(1, NA),
     ) +
     labs(
-      x = glue("years of pain by type imported in {country} in {year}"),
-      y = "pain type"
+      x = glue("years of pain by level imported in {country} in {year}"),
+      y = "pain level"
     ) +
     theme_minimal()
 
