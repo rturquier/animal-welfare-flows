@@ -221,6 +221,10 @@ save_fig("hen_housing_EU_map.png")
 # Read global hen housing data --------------------------------------------
 hen_df <- prepare_hen_df()
 
+# Plot total numbers of hens by system in the EU --------------------------
+hen_df |> prepare_total_EU_hen_df() |> plot_total_EU_housing_shares()
+save_fig("total_EU_housing_shares.svg")
+
 # Compare imports and share of cages --------------------------------------
 egg_trade_df <- prepare_egg_trade_df(
   production_df,
@@ -243,6 +247,28 @@ egg_pain_df |> plot_imported_pain_by_level("France", 2024)
 # Aggregate pain ----------------------------------------------------------
 pain_weights <- c(10^(-1), 1, 10^1, 10^2)
 equivalent_pain_df <- egg_pain_df |> aggregate_pain(pain_weights)
+
+# Plot aggregate pain -----------------------------------------------------
+apparent_pain_consumption_df <- equivalent_pain_df |>
+  filter(
+    year == 2024,
+    country == "Germany",
+    value_type == "central_estimate"
+  ) |>
+  mutate(pain_exported = -pain_exported) |>
+  pivot_longer(starts_with("pain_"), values_to = "pain_duration")
+
+apparent_pain_consumption_df |>
+  ggplot(aes(fill = name, y = pain_duration, x=housing_type)) +
+    geom_bar(position="stack", stat="identity") +
+    scale_fill_manual(
+      name = "Hurtful-equivalent pain:",
+      values = c("#E92", "#0F5E89", "#1585C1"),
+      labels = c("imported", "produced minus exported", "exported"),
+    ) +
+    scale_x_discrete(
+      labels = rev(housing_system_names) |> str_replace(" cages", "\ncages")
+    )
 
 # Plot evolution of cage and import shares -------------------------------
 egg_trade_df |> plot_cage_and_import_shares(country = "Sweden")

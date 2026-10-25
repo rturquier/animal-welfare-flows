@@ -6,6 +6,12 @@ EU_27 <- c(
   "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden"
 )
 
+housing_system_palette <- c(
+  "#81CF72", "#FFCC22", "#EE9922", "#EE6666", "#B05555"
+)
+housing_system_names <- c(
+  "Organic", "Free range", "Barn", "Enriched cages", "Conventional cages"
+)
 
 # Downloads ---------------------------------------------------------------
 download_wrapper <- function(.download){
@@ -469,6 +475,24 @@ prepare_hen_df <- function(){
                                      WFI_hens_df, OWID_hen_df) |>
     impute_missing_hen_housing_data()
   return(hen_df)
+}
+
+prepare_total_EU_hen_df <- function(hen_df){
+  total_EU_hen_df <- hen_df |>
+    filter(country %in% EU_27) |>
+    group_by(year) |>
+    summarise(across(starts_with("n_"), sum)) |>
+    rename(n_hens_total = n_hens) |>
+    pivot_longer(
+      n_battery:n_organic,
+      names_to = "housing_system",
+      values_to = "n_hens",
+      names_prefix = "n_",
+      names_transform = as_factor,
+    ) |>
+    mutate(system_share = n_hens / n_hens_total) |>
+    ungroup()
+  return(total_EU_hen_df)
 }
 
 # ------- FAO data -------
@@ -1234,6 +1258,42 @@ plot_housing_shares <- function(hen_df, country_name){
     theme_minimal()
 
   return(housing_shares_plot)
+}
+
+plot_total_EU_housing_shares <- function(total_EU_hen_df){
+  total_EU_housing_share_plot <- total_EU_hen_df |>
+    mutate(
+      labels = if_else(year %in% c(2011, 2025) & system_share >= 0.005,
+                       system_share,
+                       NA),
+      label_dx = case_match(year, 2011 ~ 1.1, 2025 ~ -0.15, .default = 0)
+    ) |>
+    ggplot(aes(x = year, y = n_hens, fill = fct_rev(housing_system))) +
+    geom_area(alpha = 1) +
+    scale_fill_discrete(
+      palette = housing_system_palette,
+      labels = housing_system_names
+    ) +
+    geom_text(
+      aes(label = scales::percent(labels, accuracy = 1),
+          hjust = label_dx),
+      position = position_stack(vjust = 0.5),
+      size = 3
+    ) +
+    scale_x_continuous(
+      breaks = c(2011, 2015, 2020, 2025),
+      expand = expansion(mult = 0.08)
+    ) +
+    scale_y_continuous(
+      labels = \(x) x / 10^6  # Convert to millions
+    ) +
+    labs(
+      x = "Year",
+      y = NULL,
+      subtitle = "Millions of laying hens",
+      fill = "Housing system"
+    ) +
+    theme_minimal()
 }
 
 map_hen_housing <- function(hen_df, year = NULL){
