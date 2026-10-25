@@ -233,16 +233,19 @@ egg_trade_df <- prepare_egg_trade_df(
 )
 
 # Plot production, imports and exports by housing system -----------------
-country <- "Sweden"
+country <- "Germany"
 year <- 2024
 egg_trade_df |> plot_apparent_consumption_by_system(country, year)
-save_fig(glue("apparent_consumption_by_system_{country}_{year}.png"))
+save_fig(glue("apparent_consumption_by_system_{country}_{year}.svg"))
 
 # Convert eggs to pain ----------------------------------------------------
 egg_pain_df <- prepare_egg_pain_df(egg_trade_df)
 
 # Plot imported pain ------------------------------------------------------
-egg_pain_df |> plot_imported_pain_by_level("France", 2024)
+country <- "Germany"
+year <- 2024
+egg_pain_df |> plot_imported_pain_by_level(country, year)
+save_fig(glue("imported_pain_by_level_{country}_{year}.svg"))
 
 # Aggregate pain ----------------------------------------------------------
 pain_weights <- c(10^(-1), 1, 10^1, 10^2)

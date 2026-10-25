@@ -1343,13 +1343,20 @@ plot_apparent_consumption_by_system <- function(egg_trade_df, country, year){
     ggplot(aes(fill=variable_name, y=n_eggs, x=housing_type)) +
     geom_bar(position="stack", stat="identity") +
     scale_fill_manual(
-      name = NULL,
-      values = c("#E92", "#0F5E89", "#1894D8")
+      name = "Eggs:",
+      values = c("#E92", "#0F5E89", "#1585C1"),
+      labels = c("imported", "produced minus exported", "exported"),
+    ) +
+    scale_x_discrete(
+      labels = rev(housing_system_names) |> str_replace(" cages", "\ncages")
+    ) +
+    scale_y_continuous(
+      labels = \(x) x / 10^9  # convert to billions of eggs
     ) +
     labs(
-      x = "Housing type",
-      y = "Number of eggs",
-      title = glue("Apparent consumption of eggs in {country}, {year}")
+      x = NULL,
+      y = NULL,
+      subtitle = "Billions of eggs"
     ) +
     theme_minimal()
 }
@@ -1546,10 +1553,12 @@ plot_imported_pain_by_level <- function(egg_pain_df, country, year){
       limits = c(1, NA),
     ) +
     labs(
-      x = glue("years of pain by level imported in {country} in {year}"),
-      y = "pain level"
+      x = glue("Years of pain"),
+      y = NULL,
+      subtitle = "Pain level"
     ) +
-    theme_minimal()
+    theme_minimal() +
+    theme(plot.title.position = "plot")
 
   return(pain_plot)
 }
