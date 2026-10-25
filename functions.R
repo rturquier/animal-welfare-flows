@@ -436,10 +436,15 @@ impute_missing_hen_housing_data <- function(combined_hen_df){
     mutate(
       hen_housing_shares_imputed = replace_na(hen_housing_shares_imputed, TRUE),
       share_cage = coalesce(share_cage, share_battery + share_enriched),
-      across(share_cage:share_organic, \(x) na.fill(x, "extend"))
+      across(c(share_cage:share_organic, n_hens), \(x) na.fill(x, "extend"))
     ) |>
     split_cages_between_conventional_and_enriched() |>
     mutate(
+      n_battery = replace_na(n_hens * share_battery),
+      n_enriched = replace_na(n_hens * share_enriched),
+      n_barn = replace_na(n_hens * share_barn),
+      n_free_range = replace_na(n_hens * share_free_range),
+      n_organic = replace_na(n_hens * share_organic),
     ) |>
     filter(year %in% year_range)
 
