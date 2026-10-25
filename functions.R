@@ -417,12 +417,15 @@ fill_missing_housing_shares_rowwise <- function(combined_hen_df){
   return(rowwise_filled_hen_df)
 }
 
+get_year_range <- function(df) {
+  year_range <- min(df$year):max(df$year)
+  return(year_range)
+}
+
 impute_missing_hen_housing_data <- function(combined_hen_df){
-  earliest_year_in_EU_data <-
-    combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> min()
-  latest_year_in_EU_data <-
-    combined_hen_df |> filter(country %in% EU_27) |> pull(year) |> max()
-  year_range <- earliest_year_in_EU_data:latest_year_in_EU_data
+  year_range <- combined_hen_df |>
+    filter(country %in% EU_27) |>
+    get_year_range()
 
   completed_df <- combined_hen_df |>
     fill_missing_housing_shares_rowwise() |>
@@ -438,7 +441,7 @@ impute_missing_hen_housing_data <- function(combined_hen_df){
     split_cages_between_conventional_and_enriched() |>
     mutate(
     ) |>
-    filter(year %in% earliest_year_in_EU_data:latest_year_in_EU_data)
+    filter(year %in% year_range)
 
   return(completed_df)
 }
@@ -701,7 +704,7 @@ interpolate_and_extend_missings <- function(production_df){
   #' * NAs before and after the first or last non-missing value are replaced
   #'   with the first or last available value,
   #' * NAs between two non-missing values are interpolated linearly.
-  year_range <- min(production_df$year):max(production_df$year)
+  year_range <- get_year_range(production_df)
 
   interpolated_production_df <- production_df |>
     group_by(country, animal) |>
