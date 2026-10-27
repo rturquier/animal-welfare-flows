@@ -1307,7 +1307,7 @@ map_hen_housing <- function(hen_df, year = NULL){
     inner_join(worldmap_df, by = "country") |>
     ggplot(aes(x = long, y = lat, group = group)) +
     coord_fixed(1.2) +
-    geom_polygon(aes(fill = share_enriched, color = "#222")) +
+    geom_polygon(aes(fill = share_cage)) +
     scale_fill_binned(
       palette = "Oranges",
       breaks = 1:8/10,
@@ -1317,7 +1317,7 @@ map_hen_housing <- function(hen_df, year = NULL){
     guides(color="none") +
     theme_void() +
     labs(fill = glue("Share of hens in cages in {year}"))
-  ggplot()
+
   return(hen_housing_map)
 }
 
