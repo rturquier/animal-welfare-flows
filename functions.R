@@ -1127,7 +1127,7 @@ prepare_egg_pain_df <- function(egg_trade_df){
       pain_imported = pain_per_egg * imports,
       pain_exported = pain_per_egg * exports,
     ) |>
-    group_by(country, year, pain_level, value_type) |>
+    group_by(country, year, housing_type, pain_level, value_type) |>
     summarise(across(matches("pain_......ed"), \(x) sum(x, na.rm = TRUE))) |>
     mutate(across(matches("pain_......ed"), as.duration))
 
@@ -1140,7 +1140,7 @@ aggregate_pain <- function(pain_df, pain_weights){
     pain_weight = pain_weights
   )
   equivalent_pain_df <- egg_pain_df |>
-    group_by(country, year, value_type) |>
+    group_by(country, year, housing_type, value_type) |>
     left_join(pain_weights_df, by = "pain_level") |>
     summarise(across(matches("pain_......ed"),
                      \(x) sum(x * pain_weight) )) |>
@@ -1530,8 +1530,9 @@ plot_ADG_evolution <- function(adjusted_ADG_df, country){
 plot_imported_pain_by_level <- function(egg_pain_df, country, year){
   pain_plot_df <- egg_pain_df |>
     filter(country == .env$country, year == .env$year) |>
-    mutate(across(matches("pain_......ed"),
-                  \(x) as.numeric(x, units = "years") )) |>
+    group_by(pain_level, value_type) |>
+    summarise(across(matches("pain_......ed"),
+                     \(x) sum(as.numeric(x, units = "years")) )) |>
     pivot_wider(
       names_from = value_type,
       values_from = matches("pain_......ed")
