@@ -232,6 +232,14 @@ egg_trade_df <- prepare_egg_trade_df(
   hen_df
 )
 
+# Germany is the largest egg importer in the world ------------------------
+FAO_trade_matrix |>
+  group_by(country, year) |>
+  summarise(imports = sum(imports)) |>
+  group_by(year) |>
+  top_n(1) |>
+  arrange(desc(year))
+
 # Plot production, imports and exports by housing system -----------------
 country <- "Germany"
 year <- 2024
