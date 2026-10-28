@@ -6,12 +6,13 @@ EU_27 <- c(
   "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden"
 )
 
-housing_system_palette <- c(
+hen.system.palette <- c(
   "#81CF72", "#FFCC22", "#EE9922", "#EE6666", "#B05555"
 )
-housing_system_names <- c(
+hen.system.names <- c(
   "Organic", "Free range", "Barn", "Enriched cages", "Conventional cages"
 )
+hen.system.levels <- c("battery", "enriched", "barn", "free_range", "organic")
 
 # Downloads ---------------------------------------------------------------
 download_wrapper <- function(.download){
@@ -1010,7 +1011,6 @@ adjust_ADG_for_trade_flows <- function(production_df, FAO_trade_matrix){
 
 # ------- Hen housing + trade data -------
 make_egg_trade_df_longer <- function(egg_trade_df){
-  housing_levels <- c("battery", "enriched", "barn", "free_range", "organic")
   any_housing_type <- "(battery|enriched|barn|free_range|organic)"
 
   longer_egg_trade_df <- egg_trade_df  |>
@@ -1025,7 +1025,7 @@ make_egg_trade_df_longer <- function(egg_trade_df){
                 c(production, consumption, imports, exports)) |>
     pivot_wider(names_from = "variable_name", values_from = "n_eggs") |>
     rename(n_hens_total = n_hens, n_hens = n) |>
-    mutate(housing_type = factor(housing_type, levels = housing_levels))
+    mutate(housing_type = factor(housing_type, levels = hen.system.levels))
 
   return(longer_egg_trade_df)
 }
@@ -1115,6 +1115,7 @@ prepare_egg_pain_df <- function(egg_trade_df){
   hours_of_pain_per_hen_df <- prepare_WFI_pain_per_hen_data()
 
   egg_pain_df <- egg_trade_df |>
+    filter(item == "Hen eggs in shell, fresh") |>
     semi_join(hours_of_pain_per_hen_df, by = "housing_type") |>
     left_join(
       hours_of_pain_per_hen_df,
@@ -1129,12 +1130,15 @@ prepare_egg_pain_df <- function(egg_trade_df){
     ) |>
     group_by(country, year, housing_type, pain_level, value_type) |>
     summarise(across(matches("pain_......ed"), \(x) sum(x, na.rm = TRUE))) |>
-    mutate(across(matches("pain_......ed"), as.duration))
+    mutate(
+      across(matches("pain_......ed"), as.duration),
+      housing_type = factor(housing_type, levels = hen.system.levels)
+    )
 
   return(egg_pain_df)
 }
 
-aggregate_pain <- function(pain_df, pain_weights){
+aggregate_pain <- function(egg_pain_df, pain_weights){
   pain_weights_df <- tibble(
     pain_level = egg_pain_df |> pull(pain_level) |> unique(),
     pain_weight = pain_weights
@@ -1271,8 +1275,8 @@ plot_total_EU_housing_shares <- function(total_EU_hen_df){
     ggplot(aes(x = year, y = n_hens, fill = fct_rev(housing_system))) +
     geom_area(alpha = 1) +
     scale_fill_discrete(
-      palette = housing_system_palette,
-      labels = housing_system_names
+      palette = hen.system.palette,
+      labels = hen.system.names
     ) +
     geom_text(
       aes(label = scales::percent(labels, accuracy = 1),
@@ -1348,7 +1352,7 @@ plot_apparent_consumption_by_system <- function(egg_trade_df, country, year){
       labels = c("imported", "produced minus exported", "exported"),
     ) +
     scale_x_discrete(
-      labels = rev(housing_system_names) |> str_replace(" cages", "\ncages")
+      labels = rev(hen.system.names) |> str_replace(" cages", "\ncages")
     ) +
     scale_y_continuous(
       labels = \(x) x / 10^9  # convert to billions of eggs
@@ -1562,6 +1566,56 @@ plot_imported_pain_by_level <- function(egg_pain_df, country, year){
     theme(plot.title.position = "plot")
 
   return(pain_plot)
+}
+
+plot_equivalent_pain <- function(equivalent_pain_df, country, year){
+  apparent_pain_consumption_df <- equivalent_pain_df |>
+    filter(
+      year == .env$year,
+      country == .env$country,
+      value_type == "central_estimate"
+    ) |>
+    mutate(
+      pain_produced_not_exported = pain_produced - pain_exported,
+      pain_exported = -pain_exported
+    ) |>
+    select(
+      housing_type,
+      pain_imported,
+      pain_produced_not_exported,
+      pain_exported
+    ) |>
+    pivot_longer(
+      starts_with("pain_"),
+      values_to = "pain_duration",
+      names_to = "flow_type",
+      names_prefix = "pain_",
+      names_transform = as_factor
+    ) |>
+    mutate(pain_duration = as.numeric(pain_duration, units = "years"))
+
+  apparent_equivalent_pain_plot <- apparent_pain_consumption_df |>
+    ggplot(aes(fill = flow_type, y = pain_duration, x=housing_type)) +
+    geom_bar(position="stack", stat="identity") +
+    scale_fill_manual(
+      name = NULL,
+      values = c("#E92", "#0F5E89", "#1585C1"),
+      labels = c("imported", "produced minus exported", "exported"),
+    ) +
+    scale_x_discrete(
+      labels = rev(hen.system.names)[1:3] |> str_replace(" cages", "\ncages")
+    ) +
+    scale_y_continuous(
+      labels = \(x) x / 10^6  # convert to millions of years
+    ) +
+    labs(
+      x = NULL,
+      y = NULL,
+      subtitle = "Millions of years of hurtful-equivalent pain"
+    ) +
+    theme_minimal() +
+    theme(plot.title.position = "plot")
+  return(apparent_equivalent_pain_plot)
 }
 
 plot_cage_and_import_shares <- function(egg_trade_df, country){

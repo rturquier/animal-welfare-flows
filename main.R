@@ -278,7 +278,7 @@ egg_trade_df |>
     labels = rev(housing_system_names) |> str_replace(" cages", "\ncages")
   ) +
   scale_y_continuous(
-    labels = \(x) abs(x / 10^9)  # convert to billions of eggs
+    labels = \(x) abs(x / 10^9),  # convert to billions of eggs
   ) +
   facet_wrap(~country) +
   labs(
@@ -304,26 +304,8 @@ pain_weights <- c(10^(-1), 1, 10^1, 10^2)
 equivalent_pain_df <- egg_pain_df |> aggregate_pain(pain_weights)
 
 # Plot aggregate pain -----------------------------------------------------
-apparent_pain_consumption_df <- equivalent_pain_df |>
-  filter(
-    year == 2024,
-    country == "Germany",
-    value_type == "central_estimate"
-  ) |>
-  mutate(pain_exported = -pain_exported) |>
-  pivot_longer(starts_with("pain_"), values_to = "pain_duration")
-
-apparent_pain_consumption_df |>
-  ggplot(aes(fill = name, y = pain_duration, x=housing_type)) +
-    geom_bar(position="stack", stat="identity") +
-    scale_fill_manual(
-      name = "Hurtful-equivalent pain:",
-      values = c("#E92", "#0F5E89", "#1585C1"),
-      labels = c("imported", "produced minus exported", "exported"),
-    ) +
-    scale_x_discrete(
-      labels = rev(housing_system_names) |> str_replace(" cages", "\ncages")
-    )
+equivalent_pain_df |> plot_equivalent_pain("Germany", 2024)
+save_fig("equivalent_pain_Germany_2024.svg")
 
 # Plot evolution of cage and import shares -------------------------------
 egg_trade_df |> plot_cage_and_import_shares(country = "Sweden")
