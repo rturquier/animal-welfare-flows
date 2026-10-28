@@ -1558,7 +1558,7 @@ plot_imported_pain_by_level <- function(egg_pain_df, country, year){
       limits = c(1, NA),
     ) +
     labs(
-      x = glue("Years of pain"),
+      x = "Years of pain (log scale)",
       y = NULL,
       subtitle = "Pain level"
     ) +
