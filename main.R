@@ -210,9 +210,9 @@ download_EU_hen_data(EU_hen_path)
 EU_hen_df <- prepare_EU_hen_df(EU_hen_path)
 
 # Plot shares in a given country ----------------------------------------------
-country = "Slovenia"
+country = "France"
 EU_hen_df |> plot_housing_shares(country)
-save_fig(glue("hen_housing_shares_{country}.png"))
+save_fig(glue("hen_housing_shares_{country}.svg"))
 
 # Map housing shares in a given year --------------------------------------
 map_hen_housing(hen_df, year=2025)
@@ -241,10 +241,54 @@ FAO_trade_matrix |>
   arrange(desc(year))
 
 # Plot production, imports and exports by housing system -----------------
-country <- "Germany"
+country <- "Lithuania"
 year <- 2024
 egg_trade_df |> plot_apparent_consumption_by_system(country, year)
 save_fig(glue("apparent_consumption_by_system_{country}_{year}.svg"))
+
+# Plot both Germany and Poland --------------------------------------------
+any_housing_type <- "(battery|enriched|barn|free_range|organic)"
+
+egg_trade_df |>
+  filter(
+    item == "Hen eggs in shell, fresh",
+    country %in% c("Poland", "Germany"),
+    year == .env$year
+  ) |>
+  mutate(exports = -exports) |>  # To show exports below x-axis
+  pivot_longer(
+    c(imports, exports, production_not_exported),
+    names_to = "variable_name",
+    values_to = "n_eggs"
+  ) |>
+  mutate(
+    variable_name = factor(variable_name, levels = c("imports",
+                                                     "production_not_exported",
+                                                     "exports")  ),
+    country = factor(country, levels = c("Poland", "Germany"))
+  ) |>
+  ggplot(aes(fill=variable_name, y=n_eggs, x=housing_type)) +
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_manual(
+    name = "Eggs:",
+    values = c("#E92", "#0F5E89", "#1585C1"),
+    labels = c("imported", "produced\nminus exported", "exported"),
+  ) +
+  scale_x_discrete(
+    labels = rev(housing_system_names) |> str_replace(" cages", "\ncages")
+  ) +
+  scale_y_continuous(
+    labels = \(x) abs(x / 10^9)  # convert to billions of eggs
+  ) +
+  facet_wrap(~country) +
+  labs(
+    x = NULL,
+    y = NULL,
+    subtitle = "Billions of eggs"
+  ) +
+  theme_minimal()
+
+save_fig("apparent_consumption_Germany_Poland_2024.svg", width = 810)
 
 # Convert eggs to pain ----------------------------------------------------
 egg_pain_df <- prepare_egg_pain_df(egg_trade_df)
