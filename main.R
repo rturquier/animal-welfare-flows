@@ -89,7 +89,7 @@ save_fig("net_chicken_meat_exports.svg")
 
 # Map Average Daily weight Gain (ADG) -------------------------------------
 production_df |> map_ADG(year = 2024)
-save_fig("ADG.svg")
+save_fig("ADG_map.svg")
 
 # Adjust ADG for trade flows ----------------------------------------------
 adjusted_ADG_df <- adjust_ADG_for_trade_flows(production_df, FAO_trade_matrix)

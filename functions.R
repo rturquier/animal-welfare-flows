@@ -1437,7 +1437,7 @@ map_ADG <- function(production_df, year = NULL) {
     coord_fixed(1.2) +
     geom_polygon(aes(fill = ADG)) +
     scale_fill_binned(
-      palette = "viridis",
+      palette = scales::pal_viridis(direction = -1, option = "magma"),
       breaks = c(5, 10, 20, 30),
       show.limits = TRUE,
       labels = \(x) round(x)
