@@ -280,7 +280,7 @@ egg_trade_df |>
     labels = c("imported", "produced\nminus exported", "exported"),
   ) +
   scale_x_discrete(
-    labels = rev(housing_system_names) |> str_replace(" cages", "\ncages")
+    labels = rev(hen.system.names) |> str_replace(" cages", "\ncages")
   ) +
   scale_y_continuous(
     labels = \(x) abs(x / 10^9),  # convert to billions of eggs
@@ -291,7 +291,8 @@ egg_trade_df |>
     y = NULL,
     subtitle = "Billions of eggs"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title.position = "plot")
 
 save_fig("apparent_consumption_Germany_Poland_2024.svg", width = 810)
 

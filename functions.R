@@ -1297,7 +1297,9 @@ plot_total_EU_housing_shares <- function(total_EU_hen_df){
       subtitle = "Millions of laying hens",
       fill = "Housing system"
     ) +
-    theme_minimal()
+    theme_minimal() +
+    theme(plot.title.position = "plot")
+  return(total_EU_housing_share_plot)
 }
 
 map_hen_housing <- function(hen_df, year = NULL){
