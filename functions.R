@@ -1486,9 +1486,9 @@ scatterplot_ADG_by_country <- function(adjusted_ADG_df,
                                        year=2024, compare_to=adjusted_ADG){
   compare_to <- enexpr(compare_to)
   subtitle <- if(compare_to == "partner_ADG"){
-    "ADG of consumed chicken (g/day)"
-  } else {
-    "ADG of imported chicken (g/day)"
+    "ADG of imported chickens (g/day)"
+  } else if (compare_to == "adjusted_ADG") {
+    "ADG of consumed chickens (g/day)"
   }
 
   adjusted_ADG_df |>
@@ -1508,7 +1508,7 @@ scatterplot_ADG_by_country <- function(adjusted_ADG_df,
     scale_y_continuous(limits = c(0, 55)) +
     scale_color_discrete(palette = c("#0F5E89", "#E92")) +
     labs(
-      x="ADG of chicken produced in the country (g/day)",
+      x="ADG of chickens produced in the country (g/day)",
       y=NULL,
       subtitle = subtitle
     ) +
