@@ -307,6 +307,82 @@ equivalent_pain_df <- egg_pain_df |> aggregate_pain(pain_weights)
 equivalent_pain_df |> plot_equivalent_pain("Germany", 2024)
 save_fig("equivalent_pain_Germany_2024.svg")
 
+# Plot aggregate pain in the EU ---------
+former_european_areas <- c(
+  "Belgium-Luxembourg",
+  "Czechoslovakia",
+  "Yugoslav SFR"
+)
+
+EU_eggs_trade_matrix <- FAO_trade_matrix |>
+  filter(item == "Hen eggs in shell, fresh") |>
+  mutate(
+    across(c(country, partner),
+           \(x) if_else(x %in% c(EU_27, former_european_areas), "EU", x)),
+    across(c(imports, exports),
+           \(x) if_else(country == partner, 0, x))
+  ) |>
+  group_by(country, partner, year, item, unit) |>
+  summarise(across(c(imports, exports),
+            \(x) sum(x, na.rm = TRUE) ))
+
+EU_egg_production_df <- production_df |>
+  filter(animal == "hens", !(country %in% EU_27)) |>
+  mutate(country = if_else(country == "European Union (27)", "EU", country)) |>
+  select(country, year, production = n_eggs, production_kg) |>
+  group_by(country, year) |>
+  summarise(across(c(production, production_kg), \(x) sum(x, na.rm = TRUE)),
+            .groups = "drop") |>
+  mutate(item = "Hen eggs in shell, fresh")
+
+EU_hen_df <- hen_df |>
+  mutate(
+    country = if_else(country %in% EU_27, "EU", country),
+    across(starts_with("share_"), \(x) if_else(country == "EU", NA, x))
+  ) |>
+  group_by(country, year) |>
+  summarise(across(matches("^(n_|share)"), sum), .groups = "drop") |>
+  mutate(
+    share_battery = coalesce(share_battery, n_battery / n_hens),
+    share_enriched = coalesce(share_enriched, n_enriched / n_hens),
+    share_barn = coalesce(share_barn, n_barn / n_hens),
+    share_free_range = coalesce(share_free_range, n_free_range / n_hens),
+    share_organic = coalesce(share_organic, n_organic / n_hens),
+    share_cage = coalesce(share_cage, share_battery + share_enriched)
+  )
+
+egg_trade_and_production_df <- EU_eggs_trade_matrix |>
+  left_join(EU_hen_df, by = c("country", "year")) |>
+  left_join(EU_hen_df,
+            by = join_by(partner == country, year),
+            suffix = c("_country", "_partner")) |>
+  left_join(EU_egg_production_df, by = c("country", "year", "item")) |>
+  aggregate_egg_trade() |>
+  mutate(
+    consumption = production - exports + imports,
+    imports_share = imports / consumption,
+  ) |>
+  make_egg_trade_df_longer() |>
+  mutate(
+    production = production_total * share,
+    exports = exports_total * share,
+    production_not_exported = production - exports,
+    consumption = production_not_exported + imports,
+  ) |>
+  select(
+    country, year, item, housing_type,
+    share, production, imports, exports,
+    production_not_exported, consumption,
+    unit
+  )
+
+EU_equivalent_pain_df <- egg_trade_and_production_df |>
+  prepare_egg_pain_df() |>
+  aggregate_pain(pain_weights)
+
+EU_equivalent_pain_df |> plot_equivalent_pain("EU", 2024)
+save_fig("equivalent_pain_EU_2024.svg")
+
 # Plot evolution of cage and import shares -------------------------------
 egg_trade_df |> plot_cage_and_import_shares(country = "Sweden")
 
