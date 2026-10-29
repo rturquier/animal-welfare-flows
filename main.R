@@ -104,9 +104,14 @@ adjusted_ADG_df |>
 
 # Scatterplot ADG by country ---------------------------------------------
 adjusted_ADG_df |>
-  scatterplot_ADG_by_country(year = 2024)
+  scatterplot_ADG_by_country(year = 2024, compare_to = partner_ADG)
 
-save_fig("ADG_vs_partner_ADG_2024_no_color.png")
+save_fig("ADG_vs_partner_ADG_2024.svg", width = 349, height = 333)
+
+adjusted_ADG_df |>
+  scatterplot_ADG_by_country(year = 2024, compare_to = adjusted_ADG)
+
+save_fig("ADG_vs_adjusted_ADG_2024.svg", width = 349, height = 333)
 
 # Plot both ADGs across time for a given country --------------------------
 adjusted_ADG_df |> plot_ADG_evolution(country = "EU_27")

@@ -1482,28 +1482,39 @@ plot_ADG_by_country <- function(
     theme(legend.position = "top")
 }
 
-scatterplot_ADG_by_country <- function(adjusted_ADG_df, year=2024){
+scatterplot_ADG_by_country <- function(adjusted_ADG_df,
+                                       year=2024, compare_to=adjusted_ADG){
+  compare_to <- enexpr(compare_to)
+  subtitle <- if(compare_to == "partner_ADG"){
+    "ADG of consumed chicken (g/day)"
+  } else {
+    "ADG of imported chicken (g/day)"
+  }
+
   adjusted_ADG_df |>
     filter(year == .env$year, country != "Iceland") |>
     ggplot() +
     geom_point(
       aes(
         x = ADG,
-        y = partner_ADG,
+        y = !!compare_to,
         size = n_consumed,
-        # color = share_of_imports_in_consumption > 0.1,
+        color = share_of_imports_in_consumption > 0.1,
       ),
-      alpha = 0.4,
+      alpha = 0.6,
     ) +
     geom_abline(alpha = 0.5) +
     scale_x_continuous(limits = c(0, NA)) +
-    scale_y_continuous(limits = c(0, NA)) +
+    scale_y_continuous(limits = c(0, 55)) +
+    scale_color_discrete(palette = c("#0F5E89", "#E92")) +
     labs(
-      x="Average daily weight gain of chicken produced in the country (g/day)",
-      y="ADG of consumed chicken (g/day)"
+      x="ADG of chicken produced in the country (g/day)",
+      y=NULL,
+      subtitle = subtitle
     ) +
     guides(color = "none", size = "none") +
-    theme_minimal()
+    theme_minimal() +
+    theme(plot.title.position = "plot", legend.position = "bottom")
 }
 
 plot_ADG_evolution <- function(adjusted_ADG_df, country){
